@@ -94,6 +94,27 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             letter-spacing: 0.05em;
         }
+
+        /* SVG Chart Styles */
+        .chart-path {
+            fill: none;
+            stroke: #9333ea;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 4px 6px rgba(147, 51, 234, 0.3));
+        }
+        .chart-area {
+            fill: url(#chartGradient);
+            opacity: 0.6;
+        }
+        .chart-dot {
+            fill: #ffffff;
+            stroke: #9333ea;
+            stroke-width: 3;
+            r: 5;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
     </style>
 </head>
 <body class="max-w-md mx-auto bg-white shadow-2xl relative">
@@ -101,13 +122,19 @@
     <!-- 상단 헤더 -->
     <header class="p-6 pb-2 shrink-0 bg-white z-10">
         <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-2">
-                <img src="logo.png" alt="trustre" class="h-8 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
-                <div id="fallback-logo" class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center hidden">
-                    <i data-lucide="zap" class="w-5 h-5 text-white fill-white"></i>
+            <div class="flex items-center gap-3">
+                <!-- 로고 이미지 크기 확대 (h-12 -> h-16) -->
+                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+                
+                <!-- Fallback 로고도 확대 (w-12 -> w-16) -->
+                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden">
+                    <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
+                
+                <!-- 텍스트 크기 축소 (text-2xl -> text-lg) -->
                 <span class="font-bold text-lg text-slate-800">trustre</span>
             </div>
+            
             <div class="flex items-center gap-2">
                 <button onclick="startQrScanner()" class="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors active:scale-95">
                     <i data-lucide="scan-line" class="w-5 h-5 text-gray-700"></i>
@@ -146,7 +173,7 @@
                 <span class="text-lg font-bold text-purple-600">SUT</span>
             </div>
             <p class="text-xs text-[#8b95a1] mt-2 flex items-center gap-1">
-                <i data-lucide="info" class="w-3 h-3"></i> 미세 변동이 발생할 수 있어요
+                <i data-lucide="info" class="w-3 h-3"></i> 최대 1~2원 오차예요
             </p>
         </div>
 
@@ -323,7 +350,7 @@
         window.addEventListener('load', function() {
             if (window.lucide) { lucide.createIcons(); }
             fetchSutData();
-            setInterval(fetchSutData, 60000); 
+            setInterval(fetchSutData, 60000); // 1분마다 갱신
         });
 
         krwInput.addEventListener('input', function(e) {
@@ -388,15 +415,14 @@
                         value: item[1]
                     }));
 
-                    // [중요: 시간 보정] 마지막 데이터가 현재보다 1분 이상 뒤쳐지면 현재 시간으로 강제 연장
+                    // [중요: 시간 보정] 마지막 데이터가 1분 이상 뒤쳐지면 현재 시간으로 강제 연장
                     const lastDataTime = chartData[chartData.length - 1].time;
                     const now = Math.floor(Date.now() / 1000);
                     
                     if (now - lastDataTime > 60) {
-                         chartData.push({ time: now, value: latestPrice });
+                        chartData.push({ time: now, value: latestPrice });
                     } else {
-                         // 이미 거의 현재라면 값만 최신으로 업데이트
-                         chartData[chartData.length - 1].value = latestPrice;
+                        chartData[chartData.length - 1].value = latestPrice;
                     }
 
                     renderTradingViewChart(chartData);
@@ -406,9 +432,25 @@
             } catch (error) {
                 console.error("Data Fetch Error:", error);
                 handleFetchError();
+                // 실패 시 가격만이라도 재시도
+                fetchSimplePriceBackup();
             } finally {
                 if(refreshIcon) refreshIcon.classList.remove('animate-spin');
             }
+        }
+
+        async function fetchSimplePriceBackup() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=super-trust&vs_currencies=krw');
+                const d = await res.json();
+                if(d['super-trust']?.krw) {
+                    currentSutPrice = d['super-trust'].krw;
+                    isPriceLoaded = true;
+                    updatePriceDisplay(true);
+                    // 차트는 실패했으므로 Fallback 로드
+                    loadFallbackChart();
+                }
+            } catch(e) {}
         }
 
         function handleFetchError() {
@@ -422,7 +464,6 @@
 
         function updateLastTime() {
             const now = new Date();
-            // [중요: 서울 시간 강제]
             const timeStr = now.toLocaleTimeString('ko-KR', { 
                 timeZone: 'Asia/Seoul', 
                 hour: '2-digit', 
@@ -433,6 +474,7 @@
             }
         }
 
+        // [수정된 AI 멘트] 담백하고 안전한 멘트 (하락 시)
         function updateAiDiagnosis(change) {
             const absChange = Math.abs(change).toFixed(2);
             let msgs = [];
@@ -444,10 +486,11 @@
                 ];
             } else if (change >= 0) {
                 msgs = [
-                    `완만하게 오르고 있어요 (+${absChange}%)`,
+                    `완만하게 상승 중이에요 (+${absChange}%)`,
                     `안정적인 흐름을 이어가고 있어요 (+${absChange}%)`
                 ];
             } else if (change >= -5) {
+                // 하락 시 수치 숨김 & 담백한 표현
                 msgs = [
                     `잠시 쉬어가는 흐름이에요`,
                     `보합세를 보이고 있어요`
@@ -461,6 +504,7 @@
             aiDiagnosisText.innerText = msgs[Math.floor(Math.random() * msgs.length)];
         }
 
+        // [TradingView Lightweight Charts 렌더링 함수 수정]
         function renderTradingViewChart(data) {
             const container = document.getElementById('tvChartContainer');
             if (!container) return;
@@ -483,38 +527,18 @@
                             visible: true, 
                             borderVisible: false, 
                             timeVisible: true, 
-                            secondsVisible: false,
-                            // [중요: X축 시간 서울 시간으로 강제 변환]
-                            tickMarkFormatter: (time) => {
-                                const date = new Date(time * 1000);
-                                return date.toLocaleTimeString('ko-KR', { 
-                                    timeZone: 'Asia/Seoul', 
-                                    hour: '2-digit', 
-                                    minute: '2-digit',
-                                    hour12: false
-                                });
-                            }
+                            secondsVisible: false 
                         },
                         crosshair: {
                             vertLine: { color: '#9333ea', width: 1, style: 3, labelBackgroundColor: '#9333ea' },
                             horzLine: { color: '#9333ea', width: 1, style: 3, labelBackgroundColor: '#9333ea' },
                         },
-                        localization: {
-                            // [중요: 툴팁 시간 서울 시간으로 강제 변환]
-                            timeFormatter: (time) => {
-                                const date = new Date(time * 1000);
-                                return date.toLocaleString('ko-KR', { 
-                                    timeZone: 'Asia/Seoul',
-                                    month: 'numeric',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false
-                                });
-                            }
-                        },
                         handleScroll: false,
                         handleScale: false,
+                        localization: { // 한국 시간 설정
+                            locale: 'ko-KR', 
+                            dateFormat: 'yyyy/MM/dd',
+                        },
                     });
 
                     areaSeries = chartInstance.addAreaSeries({
@@ -744,4 +768,3 @@
     </script>
 </body>
 </html>
-
