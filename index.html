@@ -11,7 +11,7 @@
     <!-- QR 스캐너 -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <!-- 차트 라이브러리 (버전 고정: 4.1.1) -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
         body {
@@ -122,16 +122,15 @@
     <!-- 상단 헤더 -->
     <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10"> 
         <div class="flex justify-between items-center mb-10"> 
-            <!-- [수정] -ml-6: 로고 컨테이너 전체를 왼쪽으로 크게 이동 (약 24px) -->
             <div class="flex items-center -ml-6">
-                <!-- 이미지는 원래 여백 유지 -->
-                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+                <!-- 로고 이미지 -->
+                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 
-                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10">
+                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10 -ml-2">
                     <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
                 
-                <!-- 텍스트: 로고 옆에 바짝 붙음 (-ml-4) -->
+                <!-- 텍스트 -->
                 <span class="font-bold text-xl text-slate-900 z-0 -ml-4">trustre</span>
             </div>
             
@@ -148,7 +147,7 @@
             </div>
         </div>
         
-        <!-- 타이틀 텍스트 (기준점) -->
+        <!-- 타이틀 텍스트 -->
         <h1 class="text-2xl font-bold text-[#191f28] leading-tight">
             결제할 금액을<br>입력해 주세요
         </h1>
@@ -167,16 +166,23 @@
                 <span class="text-sm text-[#4e5968] font-medium">보내야 할 코인</span>
                 <button onclick="fetchSutData()" class="text-xs text-[#8b95a1] flex items-center gap-1 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 active:bg-gray-50">
                     <i data-lucide="refresh-cw" class="w-3 h-3" id="refreshIcon"></i>
-                    <span id="refreshText">갱신</span>
+                    <span id="refreshText">업데이트</span>
                 </button>
             </div>
             <div class="flex items-baseline gap-1">
                 <span id="sutAmount" class="text-3xl font-bold text-purple-600 num-font">0</span>
                 <span class="text-lg font-bold text-purple-600">SUT</span>
             </div>
-            <p class="text-xs text-[#8b95a1] mt-2 flex items-center gap-1">
-                <i data-lucide="info" class="w-3 h-3"></i> 최대 1~2원 오차예요
-            </p>
+            
+            <!-- 안내 아이콘 (인라인 토글) -->
+            <div class="flex flex-col items-start mt-2">
+                 <button onclick="toggleInfo()" class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 -ml-1 flex items-center gap-1">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                </button>
+                <div id="infoText" class="hidden text-[11px] text-gray-500 mt-2 bg-white p-3 rounded-xl border border-gray-100 shadow-sm leading-relaxed break-keep">
+                    편의성을 위해 소수점이 생략되면서 약 2원 정도가 자동으로 조정될 수 있어요. 자산에 미치는 영향은 거의 미세하니 안심해도 좋아요.
+                </div>
+            </div>
         </div>
 
         <!-- AI 분석 & 차트 영역 -->
@@ -326,7 +332,8 @@
         let isScannerRunning = false;
         let isProcessingScan = false;
         let chartInstance = null;
-        let areaSeries = null;
+        let pastSeries = null;
+        let todaySeries = null;
 
         const krwInput = document.getElementById('krwInput');
         const krwKorean = document.getElementById('krwKorean');
@@ -342,6 +349,7 @@
         const scanResultModal = document.getElementById('scanResultModal');
         const manualOpenModal = document.getElementById('manualOpenModal'); 
         const storeRedirectModal = document.getElementById('storeRedirectModal'); 
+        const infoText = document.getElementById('infoText'); 
         const scannedAddressDisplay = document.getElementById('scannedAddressDisplay');
         const detectingOverlay = document.getElementById('detectingOverlay'); 
         const aiDiagnosisText = document.getElementById('aiDiagnosisText');
@@ -351,8 +359,10 @@
 
         window.addEventListener('load', function() {
             if (window.lucide) { lucide.createIcons(); }
+            // 초기화: 오늘 날짜 확인 및 히스토리 관리
+            manageDailyReset();
             fetchSutData();
-            setInterval(fetchSutData, 60000); // 1분마다 갱신
+            setInterval(fetchSutData, 60000); 
         });
 
         krwInput.addEventListener('input', function(e) {
@@ -393,31 +403,36 @@
             if(refreshIcon) refreshIcon.classList.add('animate-spin');
             
             try {
-                // days=1 (최근 24시간, 5분 간격 데이터)
+                // days=1
                 const response = await fetch('https://api.coingecko.com/api/v3/coins/super-trust/market_chart?vs_currency=krw&days=1');
-                if (!response.ok) throw new Error('API Error');
-                const data = await response.json();
+                const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/token_price/polygon-pos?contract_addresses=0x98965474ecbec2f532f1f780ee37b0b05f77ca55&vs_currencies=krw&include_24hr_change=true');
                 
-                if (data.prices && data.prices.length > 0) {
-                    const latestPrice = data.prices[data.prices.length - 1][1];
+                if (!response.ok || !priceResponse.ok) throw new Error('API Error');
+                
+                const data = await response.json();
+                const priceData = await priceResponse.json();
+                
+                // [중요] token_price에서 가져온 정확한 가격 사용
+                if (data.prices && priceData['0x98965474ecbec2f532f1f780ee37b0b05f77ca55']) {
+                    const tokenInfo = priceData['0x98965474ecbec2f532f1f780ee37b0b05f77ca55'];
+                    const latestPrice = tokenInfo.krw;
                     currentSutPrice = latestPrice;
                     
-                    // 24시간 변동률 계산
-                    const startPrice = data.prices[0][1];
-                    const changePercent = ((latestPrice - startPrice) / startPrice) * 100;
+                    const changePercent = tokenInfo.krw_24h_change;
 
                     isPriceLoaded = true;
                     updatePriceDisplay(true);
-                    updateAiDiagnosis(changePercent);
+                    
+                    // [핵심] AI 멘트 생성 로직 호출
+                    generateAiComment(changePercent);
+                    
                     updateLastTime();
                     
-                    // 차트 데이터 포맷팅
                     const chartData = data.prices.map(item => ({
                         time: Math.floor(item[0] / 1000), 
                         value: item[1]
                     }));
 
-                    // [중요: 시간 보정] 마지막 데이터가 1분 이상 뒤쳐지면 현재 시간으로 강제 연장
                     const lastDataTime = chartData[chartData.length - 1].time;
                     const now = Math.floor(Date.now() / 1000);
                     
@@ -456,39 +471,101 @@
                 minute: '2-digit' 
             });
             if(document.getElementById('lastUpdatedTime')) {
-                document.getElementById('lastUpdatedTime').innerText = `방금 갱신됨 (${timeStr})`;
+                document.getElementById('lastUpdatedTime').innerText = `업데이트됨 (${timeStr})`;
             }
         }
 
-        function updateAiDiagnosis(change) {
+        // [AI 멘트 생성 시스템 - 결제 코인 특화]
+        function generateAiComment(change) {
+            const historyKey = 'aiCommentHistory';
+            const dateKey = 'aiCommentDate';
+            
+            const now = Date.now();
             const absChange = Math.abs(change).toFixed(2);
-            let msgs = [];
+            
+            let category = '';
+            if (change >= 5) category = 'surge';
+            else if (change >= 0) category = 'rise';
+            else if (change >= -5) category = 'drop';
+            else category = 'plunge';
 
-            if (change >= 5) {
-                msgs = [
-                    `강한 상승 흐름을 보이고 있어요 (+${absChange}%)`,
-                    `매수세가 힘을 얻고 있어요 (+${absChange}%)`
-                ];
-            } else if (change >= 0) {
-                msgs = [
-                    `완만하게 상승 중이에요 (+${absChange}%)`,
-                    `안정적인 흐름을 이어가고 있어요 (+${absChange}%)`
-                ];
-            } else if (change >= -5) {
-                // 하락 시 수치 숨김 & 담백한 표현
-                msgs = [
-                    `잠시 쉬어가는 흐름이에요`,
-                    `보합세를 보이고 있어요`
-                ];
-            } else {
-                msgs = [
-                    `아직 힘을 받지 못하고 있어요`,
-                    `조금 더 지켜볼 필요가 있어요`
-                ];
+            // 템플릿: 서두 + 분석 + 제안(이득 강조)
+            const templates = {
+                surge: [
+                    ["강한", "뚜렷한", "급격한"], 
+                    ["매수세가", "상승 흐름이"], 
+                    ["유입되고 있어요", "나타나고 있어요", "지속되고 있어요"], 
+                    [`(+${absChange}%)`]
+                ],
+                rise: [
+                    ["완만한", "안정적인", "전일 대비"], 
+                    ["상승 흐름을", "우상향 추세를"], 
+                    ["유지하고 있어요", "보이고 있어요", "이어가고 있어요"], 
+                    [`(+${absChange}%)`]
+                ],
+                drop: [
+                    ["가격이", "시세가"], 
+                    ["소폭 조정", "숨 고르기", "보합세"], 
+                    ["국면에 진입했어요", "흐름을 보이고 있어요", "양상을 띠고 있어요"],
+                    ["", ""] 
+                ],
+                plunge: [
+                    ["변동성이", "가격 조정폭이"], 
+                    ["확대되며", "다소 크게"], 
+                    ["하락하고 있어요", "나타나고 있어요"],
+                    ["(결제 효율 상승 구간)", "(구매력 증가 구간)"]
+                ]
+            };
+
+            function assemble(cat) {
+                const t = templates[cat];
+                const p1 = t[0][Math.floor(Math.random() * t[0].length)];
+                const p2 = t[1][Math.floor(Math.random() * t[1].length)];
+                const p3 = t[2][Math.floor(Math.random() * t[2].length)];
+                const p4 = t[3] ? (Array.isArray(t[3]) ? t[3][Math.floor(Math.random() * t[3].length)] : t[3]) : "";
+                
+                return `${p1} ${p2} ${p3} ${p4}`;
             }
-            aiDiagnosisText.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+
+            let storedHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+            let finalComment = "";
+            let attempts = 0;
+
+            storedHistory = storedHistory.filter(item => (now - item.timestamp) < 6 * 60 * 60 * 1000);
+
+            while (attempts < 10) {
+                const candidate = assemble(category);
+                const isDuplicate = storedHistory.some(item => item.text === candidate);
+                
+                if (!isDuplicate) {
+                    finalComment = candidate;
+                    break;
+                }
+                attempts++;
+            }
+            
+            if (!finalComment) finalComment = assemble(category);
+
+            storedHistory.push({ text: finalComment, timestamp: now });
+            localStorage.setItem(historyKey, JSON.stringify(storedHistory));
+            
+            aiDiagnosisText.innerText = finalComment;
         }
 
+        function manageDailyReset() {
+            const dateKey = 'aiCommentDate';
+            const historyKey = 'aiCommentHistory';
+            const today = new Date().toDateString();
+            const lastDate = localStorage.getItem(dateKey);
+
+            if (lastDate !== today) {
+                localStorage.setItem(historyKey, '[]');
+                localStorage.setItem(dateKey, today);
+                console.log("Daily AI Comment Reset");
+            }
+        }
+
+        // [TradingView Lightweight Charts Render]
         function renderTradingViewChart(data) {
             const container = document.getElementById('tvChartContainer');
             if (!container) return;
@@ -511,7 +588,16 @@
                             visible: true, 
                             borderVisible: false, 
                             timeVisible: true, 
-                            secondsVisible: false 
+                            secondsVisible: false,
+                            tickMarkFormatter: (time) => {
+                                const date = new Date(time * 1000);
+                                return date.toLocaleTimeString('ko-KR', { 
+                                    timeZone: 'Asia/Seoul', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: false
+                                });
+                            }
                         },
                         crosshair: {
                             vertLine: { color: '#9333ea', width: 1, style: 3, labelBackgroundColor: '#9333ea' },
@@ -519,13 +605,32 @@
                         },
                         handleScroll: false,
                         handleScale: false,
-                        localization: { // 한국 시간 설정
-                            locale: 'ko-KR', 
-                            dateFormat: 'yyyy/MM/dd',
+                        localization: { 
+                            timeFormatter: (time) => {
+                                const date = new Date(time * 1000);
+                                return date.toLocaleString('ko-KR', { 
+                                    timeZone: 'Asia/Seoul',
+                                    month: 'numeric',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                });
+                            }
                         },
                     });
 
-                    areaSeries = chartInstance.addAreaSeries({
+                    // 1. 과거 (회색)
+                    pastSeries = chartInstance.addAreaSeries({
+                        topColor: 'rgba(156, 163, 175, 0.4)', 
+                        bottomColor: 'rgba(156, 163, 175, 0.0)',
+                        lineColor: '#9ca3af', 
+                        lineWidth: 2,
+                        crosshairMarkerVisible: false,
+                    });
+
+                    // 2. 오늘 (보라색)
+                    todaySeries = chartInstance.addAreaSeries({
                         topColor: 'rgba(147, 51, 234, 0.2)', 
                         bottomColor: 'rgba(147, 51, 234, 0.0)',
                         lineColor: '#9333ea', 
@@ -544,10 +649,76 @@
                 }
             }
 
-            if(areaSeries) {
-                areaSeries.setData(data);
-                chartInstance.timeScale().fitContent();
+            // [최고점/최저점 계산]
+            let minVal = data[0].value;
+            let maxVal = data[0].value;
+            let minTime = data[0].time;
+            let maxTime = data[0].time;
+
+            data.forEach(item => {
+                if (item.value < minVal) { minVal = item.value; minTime = item.time; }
+                if (item.value > maxVal) { maxVal = item.value; maxTime = item.time; }
+            });
+
+            // [데이터 분리 로직: KST 기준]
+            const now = new Date();
+            const kstOptions = { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const todayStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(now);
+
+            const pastData = [];
+            const todayData = [];
+            
+            // 마커 배열
+            const pastMarkers = [];
+            const todayMarkers = [];
+
+            // 마커 생성 함수
+            const createMarker = (time, type) => {
+                return {
+                    time: time,
+                    position: type === 'min' ? 'belowBar' : 'aboveBar',
+                    color: type === 'min' ? '#3b82f6' : '#ef4444', // 파랑/빨강
+                    shape: 'circle',
+                    size: 0.5 // 아주 작은 점
+                };
+            };
+
+            data.forEach(item => {
+                const itemDate = new Date(item.time * 1000);
+                const itemDateStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(itemDate);
+                const isToday = itemDateStr === todayStr;
+
+                if (isToday) {
+                    todayData.push(item);
+                } else {
+                    pastData.push(item);
+                }
+
+                // 마커 분배
+                if (item.time === minTime) {
+                    const marker = createMarker(item.time, 'min');
+                    isToday ? todayMarkers.push(marker) : pastMarkers.push(marker);
+                }
+                if (item.time === maxTime) {
+                    const marker = createMarker(item.time, 'max');
+                    isToday ? todayMarkers.push(marker) : pastMarkers.push(marker);
+                }
+            });
+
+            if (pastData.length > 0 && todayData.length > 0) {
+                todayData.unshift(pastData[pastData.length - 1]);
             }
+
+            if(pastSeries) {
+                pastSeries.setData(pastData);
+                pastSeries.setMarkers(pastMarkers);
+            }
+            if(todaySeries) {
+                todaySeries.setData(todayData);
+                todaySeries.setMarkers(todayMarkers);
+            }
+            
+            chartInstance.timeScale().fitContent();
         }
 
         function updatePriceDisplay(success) {
@@ -675,6 +846,14 @@
         function closeResultModal() { scanResultModal.classList.add('hidden'); }
         function closeManualModal() { manualOpenModal.classList.add('hidden'); }
         function closeStoreModal() { storeRedirectModal.classList.add('hidden'); }
+        
+        function toggleInfo() {
+            if (infoText.classList.contains('hidden')) {
+                infoText.classList.remove('hidden');
+            } else {
+                infoText.classList.add('hidden');
+            }
+        }
 
         function copyTextToClipboard(text) {
             const textArea = document.createElement("textarea");
