@@ -120,18 +120,18 @@
 <body class="max-w-md mx-auto bg-white shadow-2xl relative">
 
     <!-- 상단 헤더 -->
-    <header class="p-6 pb-2 shrink-0 bg-white z-10">
-        <div class="flex justify-between items-center mb-6">
-            <!-- [수정] gap 제거, 텍스트에 음수 마진 적용 -->
+    <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10">
+        <div class="flex justify-between items-center mb-10">
             <div class="flex items-center">
-                <img src="logo.png" alt="trustre" class="h-14 w-auto object-contain z-10" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+                <!-- 로고 이미지 (왼쪽으로 당김 -ml-2) -->
+                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 
-                <div id="fallback-logo" class="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center hidden z-10">
-                    <i data-lucide="zap" class="w-7 h-7 text-white fill-white"></i>
+                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10 -ml-2">
+                    <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
                 
-                <!-- [수정] -ml-3 (음수 마진)으로 로고 쪽으로 당김 -->
-                <span class="font-bold text-lg text-slate-800 -ml-3 z-0">trustre</span>
+                <!-- 텍스트 -->
+                <span class="font-bold text-xl text-slate-900 z-0">trustre</span>
             </div>
             
             <div class="flex items-center gap-2">
@@ -146,6 +146,8 @@
                 </div>
             </div>
         </div>
+        
+        <!-- [수정] 텍스트 크기 원래대로(2xl) 복구 -->
         <h1 class="text-2xl font-bold text-[#191f28] leading-tight">
             결제할 금액을<br>입력해 주세요
         </h1>
