@@ -122,17 +122,16 @@
     <!-- 상단 헤더 -->
     <header class="p-6 pb-2 shrink-0 bg-white z-10">
         <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-3">
-                <!-- 로고 이미지 크기 확대 (h-12 -> h-16) -->
-                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+            <!-- [수정] gap 제거, 텍스트에 음수 마진 적용 -->
+            <div class="flex items-center">
+                <img src="logo.png" alt="trustre" class="h-14 w-auto object-contain z-10" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 
-                <!-- Fallback 로고도 확대 (w-12 -> w-16) -->
-                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden">
-                    <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
+                <div id="fallback-logo" class="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center hidden z-10">
+                    <i data-lucide="zap" class="w-7 h-7 text-white fill-white"></i>
                 </div>
                 
-                <!-- 텍스트 크기 축소 (text-2xl -> text-lg) -->
-                <span class="font-bold text-lg text-slate-800">trustre</span>
+                <!-- [수정] -ml-3 (음수 마진)으로 로고 쪽으로 당김 -->
+                <span class="font-bold text-lg text-slate-800 -ml-3 z-0">trustre</span>
             </div>
             
             <div class="flex items-center gap-2">
@@ -432,25 +431,9 @@
             } catch (error) {
                 console.error("Data Fetch Error:", error);
                 handleFetchError();
-                // 실패 시 가격만이라도 재시도
-                fetchSimplePriceBackup();
             } finally {
                 if(refreshIcon) refreshIcon.classList.remove('animate-spin');
             }
-        }
-
-        async function fetchSimplePriceBackup() {
-            try {
-                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=super-trust&vs_currencies=krw');
-                const d = await res.json();
-                if(d['super-trust']?.krw) {
-                    currentSutPrice = d['super-trust'].krw;
-                    isPriceLoaded = true;
-                    updatePriceDisplay(true);
-                    // 차트는 실패했으므로 Fallback 로드
-                    loadFallbackChart();
-                }
-            } catch(e) {}
         }
 
         function handleFetchError() {
