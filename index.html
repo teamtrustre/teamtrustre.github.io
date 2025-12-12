@@ -122,15 +122,16 @@
     <!-- 상단 헤더 -->
     <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10"> 
         <div class="flex justify-between items-center mb-10"> 
-            <div class="flex items-center">
-                <!-- 로고 이미지 -->
-                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+            <!-- [수정] -ml-6: 로고 컨테이너 전체를 왼쪽으로 크게 이동 (약 24px) -->
+            <div class="flex items-center -ml-6">
+                <!-- 이미지는 원래 여백 유지 -->
+                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 
-                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10 -ml-2">
+                <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10">
                     <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
                 
-                <!-- [수정] 텍스트를 좌측으로 더 당김 (-ml-4) -->
+                <!-- 텍스트: 로고 옆에 바짝 붙음 (-ml-4) -->
                 <span class="font-bold text-xl text-slate-900 z-0 -ml-4">trustre</span>
             </div>
             
@@ -147,6 +148,7 @@
             </div>
         </div>
         
+        <!-- 타이틀 텍스트 (기준점) -->
         <h1 class="text-2xl font-bold text-[#191f28] leading-tight">
             결제할 금액을<br>입력해 주세요
         </h1>
@@ -458,7 +460,6 @@
             }
         }
 
-        // [수정된 AI 멘트] 담백하고 안전한 멘트 (하락 시)
         function updateAiDiagnosis(change) {
             const absChange = Math.abs(change).toFixed(2);
             let msgs = [];
@@ -488,7 +489,6 @@
             aiDiagnosisText.innerText = msgs[Math.floor(Math.random() * msgs.length)];
         }
 
-        // [TradingView Lightweight Charts 렌더링 함수 수정]
         function renderTradingViewChart(data) {
             const container = document.getElementById('tvChartContainer');
             if (!container) return;
@@ -563,7 +563,6 @@
             }
         }
 
-        // ... [이하 QR, 송금 등 기존 함수 유지] ...
         function startQrScanner() {
             isProcessingScan = false;
             detectingOverlay.classList.add('hidden');
