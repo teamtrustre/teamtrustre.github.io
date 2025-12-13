@@ -87,9 +87,8 @@
             font-size: 2.5rem; 
             font-weight: 700;
             color: #333d4b; 
-            /* [수정] 초기 너비를 최소화하여 '원'이 바로 붙도록 함 */
-            width: 1ch; 
-            min-width: 1ch;
+            width: 30px; 
+            min-width: 30px;
             outline: none; 
             padding: 0; 
             margin: 0;
@@ -227,12 +226,12 @@
 
     <!-- 메인 컨텐츠 -->
     <main class="flex-1 flex flex-col px-6 overflow-y-auto pb-32">
-        <!-- [수정] pl-4로 입력 영역 우측 이동 및 정렬 -->
+        <!-- 입력창 영역 -->
         <div class="mt-4 flex items-center justify-start w-full relative pl-4">
             <input type="tel" id="krwInput" class="amount-input num-font" placeholder="0" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
             <span class="text-2xl font-bold text-[#333d4b] ml-1 pointer-events-none shrink-0">원</span>
         </div>
-        <!-- [수정] 한글 금액도 pl-4.5로 우측 이동 -->
+        <!-- 한글 금액 영역 -->
         <div id="krwKorean" class="text-sm text-gray-400 font-medium text-left h-5 mb-2 shrink-0 w-full pl-4.5"></div>
 
         <div class="bg-[#f2f4f6] rounded-2xl p-5 mt-2 transition-all duration-300 transform scale-95 opacity-50 shrink-0 mb-8" id="resultCard">
@@ -333,17 +332,6 @@
         </div>
     </main>
 
-    <!-- 하단 버튼 -->
-    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-6 z-30 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] rounded-b-none">
-        <div class="flex gap-3">
-            <button id="copyBtnF" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="copyResult()">수량 복사</button>
-            <button id="walletBtnF" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="handleSendTransfer()">
-                <img src="https://trustwallet.com/assets/images/favicon.png" class="w-6 h-6 rounded-full inline-block mr-1" alt="Trust">
-                송금하기
-            </button>
-        </div>
-    </div>
-
     <!-- 모달들 -->
     <div id="scannerOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
         <div class="relative w-full max-w-[300px] aspect-square rounded-3xl overflow-hidden shadow-2xl bg-black">
@@ -371,7 +359,8 @@
                     <p class="modal-label">지갑 주소</p>
                     <p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <!-- 금액 정보 (입력했을 때만 표시) -->
+                <div id="scanAmountDetails" class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-200 pt-2 hidden">
                     <div>
                         <p class="modal-label">보낼 수량</p>
                         <p class="modal-value text-purple-600" id="scanModalSut">0 SUT</p>
@@ -412,25 +401,6 @@
             
             <button onclick="directOpenWallet()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">지금 지갑 열기</button>
             <button onclick="document.getElementById('sendModal').classList.add('hidden')" class="w-full text-gray-400 text-sm py-2 mt-1">닫기</button>
-        </div>
-    </div>
-
-    <div id="manualOpenModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">앱 실행 오류</h3>
-            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">자동으로 앱을 열 수 없어요.<br><span class="font-bold text-purple-600">지갑 주소는 복사되었으니</span><br>앱을 직접 실행해주세요.</p>
-            <button onclick="closeManualModal()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">확인</button>
-        </div>
-    </div>
-    
-    <div id="storeRedirectModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="download" class="w-6 h-6 text-purple-600"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">스토어로 이동할까요?</h3>
-            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">오류로 앱을 실행하지 못해<br>스토어로 이동할게요.<br><span class="text-xs text-purple-500 mt-1 block">* 결제 수량(SUT)은 복사되었어요.</span></p>
-            <button onclick="goToStore()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">스토어로 이동</button>
-            <button onclick="closeStoreModal()" class="w-full text-gray-400 text-sm mt-2">닫기</button>
         </div>
     </div>
 
@@ -480,6 +450,7 @@
             scanModalAddress: document.getElementById('scanModalAddress'),
             scanModalSut: document.getElementById('scanModalSut'),
             scanModalKrw: document.getElementById('scanModalKrw'),
+            scanAmountDetails: document.getElementById('scanAmountDetails'),
             sendModalSut: document.getElementById('sendModalSut'),
             sendModalKrw: document.getElementById('sendModalKrw')
         };
@@ -524,8 +495,6 @@
         function adjustInputWidth() {
             const val = ui.krwInput.value || ui.krwInput.placeholder;
             
-            // Measure precise width using canvas or hidden element
-            // Using hidden span for better accuracy with custom fonts
             const span = document.createElement('span');
             span.style.font = window.getComputedStyle(ui.krwInput).font;
             span.style.fontWeight = window.getComputedStyle(ui.krwInput).fontWeight;
@@ -537,9 +506,8 @@
             span.innerText = val;
             document.body.appendChild(span);
             
-            // Set width + small buffer
             const width = span.offsetWidth;
-            ui.krwInput.style.width = (width + 2) + 'px'; // +2px buffer
+            ui.krwInput.style.width = (width + 2) + 'px'; 
             
             document.body.removeChild(span);
         }
@@ -582,16 +550,15 @@
                 ui.resultCard.classList.add('opacity-50', 'scale-95');
                 ui.resultCard.classList.remove('opacity-100', 'scale-100', 'bg-purple-50');
                 ui.resultCard.classList.add('bg-[#f2f4f6]');
-                disableButton(ui.copyBtn); disableButton(ui.copyBtnF);
-                disableButton(ui.walletBtn); disableButton(ui.walletBtnF);
+                disableButton(ui.copyBtn); disableButton(ui.walletBtn);
                 ui.sutAmountDisplay.innerText = '0';
             } else {
                 const numVal = Number(inputAmount);
                 ui.krwKorean.innerText = convertToKoreanNumber(numVal) + '원';
                 ui.resultCard.classList.remove('opacity-50', 'scale-95', 'bg-[#f2f4f6]');
                 ui.resultCard.classList.add('opacity-100', 'scale-100', 'bg-purple-50');
-                enableButton(ui.copyBtn, 'bg-gray-200', 'text-gray-800'); enableButton(ui.copyBtnF, 'bg-gray-200', 'text-gray-800');
-                enableButton(ui.walletBtn, 'bg-purple-600', 'text-white'); enableButton(ui.walletBtnF, 'bg-purple-600', 'text-white');
+                enableButton(ui.copyBtn, 'bg-gray-200', 'text-gray-800');
+                enableButton(ui.walletBtn, 'bg-purple-600', 'text-white');
                 calculate();
             }
         }
@@ -855,7 +822,7 @@
              showToast(`${textToCopy} SUT 복사되었어요`);
         }
         
-        // Handle Send Transfer
+        // Handle Send Transfer (Deep Link)
         function handleSendTransfer() { 
             const amountText = ui.sutAmountDisplay.innerText.replace(/,/g, '');
             const amount = parseFloat(amountText);
@@ -863,37 +830,42 @@
 
             if (!amount || amount <= 0) { alert("결제할 금액을 먼저 입력해주세요."); ui.krwInput.focus(); return; }
 
-            // 1. Copy SUT
+            // 1. Copy Amount
             const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
             
-            // 2. Populate & Show Modal
+            // 2. Populate Modal
             ui.sendModalSut.innerText = `${amountText} SUT`;
             ui.sendModalKrw.innerText = `${krwText}원`;
             document.getElementById('sendModal').classList.remove('hidden');
             document.getElementById('sendModal').classList.add('flex');
 
-            // 3. Auto Redirect
-            setTimeout(directOpenWallet, 2000); 
+            // 3. Try to open app immediately (fallback to universal link)
+            setTimeout(directOpenWallet, 1500); 
         }
 
-        // [NEW] Direct Open Wallet function
         function directOpenWallet() {
-             window.location.href = "https://link.trustwallet.com/open";
+             // 1. Try Custom Scheme (Best for installed apps)
+             window.location.href = "trust://open";
+             
+             // 2. Fallback to Universal Link (If custom scheme fails or on desktop)
+             setTimeout(() => {
+                 window.location.href = "https://link.trustwallet.com/open";
+             }, 500);
         }
 
-        function goToStore() {
-             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-             if (/android/i.test(userAgent)) window.location.href = "https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp";
-             else window.location.href = "https://apps.apple.com/app/trust-ethereum-wallet/id1288339409";
-        }
-        
         // [MODIFIED] Copy And Open (From Scan)
         function copyAndOpenWallet() {
              const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-             showToast("주소가 복사되었습니다. 앱을 켤게요."); // Toast Update
+             showToast("주소가 복사되었습니다. 앱을 켤게요."); 
              closeResultModal();
-             setTimeout(() => { window.location.href = "https://link.trustwallet.com/open"; }, 800);
-             // Removed manual open modal timeout to simplify as per request
+             
+             // Direct Open Logic with Deep Link
+             setTimeout(() => {
+                 window.location.href = "trust://open";
+                 setTimeout(() => {
+                     window.location.href = "https://link.trustwallet.com/open";
+                 }, 500);
+             }, 800);
         }
 
         function closeResultModal() { document.getElementById('scanResultModal').classList.add('hidden'); }
@@ -901,7 +873,6 @@
         function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
         function showToast(m) { const t=document.getElementById('toast'); if(t){ t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000);}}
         
-        // QR Functions (Corrected)
         function startQrScanner() { 
             isProcessingScan = false; // Reset flag
             document.getElementById('scannerOverlay').classList.remove('hidden'); 
@@ -918,18 +889,27 @@
         function onScanSuccess(d) { 
             if(isProcessingScan) return; 
             isProcessingScan=true; 
-            // document.getElementById('detectingOverlay').classList.remove('hidden'); // Optional overlay
-            // Slight delay for UX
             setTimeout(()=>{ 
                 scannedAddress=d; 
                 stopQrScanner(); 
-                // Populate Scan Modal
-                ui.scanModalAddress.innerText = d;
-                ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
-                ui.scanModalKrw.innerText = ui.krwInput.value + "원";
+                
+                // [NEW] Logic: Check input amount
+                const inputVal = ui.krwInput.value;
+                const hasAmount = inputVal && inputVal !== '0';
+                
+                if (hasAmount) {
+                    ui.scanAmountDetails.classList.remove('hidden');
+                    ui.scanModalAddress.innerText = d;
+                    ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
+                    ui.scanModalKrw.innerText = inputVal + "원";
+                } else {
+                    // Hide amount details if 0
+                    ui.scanAmountDetails.classList.add('hidden');
+                    ui.scanModalAddress.innerText = d;
+                }
                 
                 document.getElementById('scanResultModal').classList.remove('hidden'); 
-                document.getElementById('scanResultModal').classList.add('flex'); // Add flex for centering
+                document.getElementById('scanResultModal').classList.add('flex'); 
             }, 500); 
         }
     </script>
