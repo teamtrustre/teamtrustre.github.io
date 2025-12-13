@@ -3,7 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>trustre 결제하기</title>
+    
+    <!-- [SEO 최적화] -->
+    <title>SUT 계산기 - 슈퍼트러스트(SuperTrust) 코인 실시간 시세 및 결제</title>
+    <meta name="description" content="SUT(슈퍼트러스트) 코인 실시간 시세 확인 및 원화(KRW) 계산기. L2U(레저투유) 결제 시 할인율 자동 계산과 트러스트월렛 송금 기능을 제공합니다.">
+    <meta name="keywords" content="SUT, SUT코인, 슈퍼트러스트, SuperTrust, SUT 계산기, 코인 계산기, L2U, 레저투유, trustre, 트러스트리">
+    <meta name="author" content="trustre">
+    
+    <!-- [SNS 공유 최적화] -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SUT 코인 결제 계산기 - 슈퍼트러스트">
+    <meta property="og:description" content="실시간 SUT 시세 확인 및 L2U 할인 결제 금액을 계산해보세요.">
+    <meta property="og:site_name" content="SUT Pay Calculator">
+
+    <meta name="robots" content="index, follow">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "SUT Pay Calculator",
+      "alternateName": ["슈퍼트러스트 계산기", "SUT 코인 계산기"],
+      "description": "SUT(SuperTrust) 코인의 실시간 KRW 가격을 확인하고 결제 금액을 계산하는 웹 애플리케이션입니다.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KRW"
+      }
+    }
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 폰트 -->
@@ -84,10 +115,10 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.05em;
         }
 
-        /* [수정] 세로 슬라이더 스타일 (두께 32px) */
+        /* Vertical Slider Style */
         .vertical-slider-container {
             position: relative;
-            width: 32px; /* 적당한 두께 */
+            width: 32px;
             height: 100%;
             background: #f3f4f6;
             border-radius: 999px;
@@ -100,8 +131,8 @@
 
         input[type=range] {
             -webkit-appearance: none;
-            width: 140px; /* 컨테이너 높이와 비슷하게 */
-            height: 32px; /* 컨테이너 너비와 일치 */
+            width: 140px; 
+            height: 32px;
             background: transparent;
             outline: none;
             cursor: pointer;
@@ -116,10 +147,7 @@
         
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 32px;
-            width: 0px; 
-            box-shadow: none;
-            border: none;
+            height: 32px; width: 0px; box-shadow: none; border: none;
         }
 
         .discount-btn {
@@ -154,14 +182,10 @@
     <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10"> 
         <div class="flex justify-between items-center mb-10"> 
             <div class="flex items-center -ml-6">
-                <!-- 로고 이미지 -->
-                <img src="logo.png" alt="trustre" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
-                
+                <img src="logo.png" alt="슈퍼트러스트(SuperTrust) SUT 코인 로고" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10 -ml-2">
                     <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
-                
-                <!-- 텍스트 -->
                 <span class="font-bold text-xl text-slate-900 z-0 -ml-4">trustre</span>
             </div>
             
@@ -196,12 +220,12 @@
                 <span class="text-sm text-[#4e5968] font-medium">보내야 할 코인</span>
                 <button onclick="fetchSutData()" class="text-xs text-[#8b95a1] flex items-center gap-1 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 active:bg-gray-50 hover:bg-gray-50 transition-colors">
                     <i data-lucide="refresh-cw" class="w-3 h-3" id="refreshIcon"></i>
-                    <span id="refreshText">갱신</span>
+                    <span id="refreshText">업데이트</span>
                 </button>
             </div>
 
-            <!-- [수정] 할인율 선택 UI (gap-8로 여백 확장) -->
-            <div class="mb-5 bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-stretch gap-8 h-[160px]">
+            <!-- 할인율 선택 UI -->
+            <div class="mb-5 bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-stretch gap-4 h-[160px]">
                 
                 <!-- Left: Info & Buttons -->
                 <div class="flex flex-col justify-between flex-1">
@@ -212,19 +236,17 @@
                         </div>
                     </div>
                     
-                    <!-- Buttons Stack -->
-                    <div class="flex flex-col gap-2 mt-2">
+                    <!-- Buttons Stack (gap-1로 수정) -->
+                    <div class="flex flex-col gap-1 mt-2">
                         <button id="btn20" onclick="setDiscount(20)" class="discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">20%</button>
                         <button id="btn10" onclick="setDiscount(10)" class="discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">10%</button>
                     </div>
                 </div>
 
-                <!-- Right: Vertical Slider (32px thickness) -->
+                <!-- Right: Vertical Slider -->
                 <div class="vertical-slider-container">
                     <input type="range" id="discountSlider" min="0" max="50" step="10" value="10" 
                            oninput="updateDiscountFromSlider(this.value)">
-                    
-                    <!-- Labels inside slider -->
                     <div class="absolute bottom-3 w-full text-center text-[10px] font-bold text-gray-400 pointer-events-none">0</div>
                     <div class="absolute top-3 w-full text-center text-[10px] font-bold text-white pointer-events-none mix-blend-overlay">50</div>
                 </div>
@@ -234,7 +256,8 @@
                 <span id="sutAmount" class="text-3xl font-bold text-purple-600 num-font">0</span>
                 <span class="text-lg font-bold text-purple-600">SUT</span>
                 
-                <button onclick="toggleInfo()" class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 ml-1 translate-y-0.5">
+                <!-- 도움말 아이콘 -->
+                <button onclick="toggleInfo()" class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 ml-1 translate-y-0.5" aria-label="도움말 보기">
                     <i data-lucide="help-circle" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -242,9 +265,19 @@
             <div id="infoText" class="hidden text-[11px] text-gray-500 mt-2 bg-white p-3 rounded-xl border border-gray-100 shadow-sm leading-relaxed break-keep">
                 편의성을 위해 소수점을 생략했어요. 자산에 미치는 영향은 거의 없으니 안심해도 좋아요.
             </div>
+
+            <!-- Buttons inside card -->
+            <div class="flex gap-3 mt-6">
+                <button id="copyBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="copyResult()">
+                    <i data-lucide="copy" class="w-5 h-5"></i> 수량 복사
+                </button>
+                <button id="walletBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="handleSendTransfer()">
+                    <i data-lucide="send" class="w-5 h-5"></i> 송금하기
+                </button>
+            </div>
         </div>
 
-        <!-- AI 분석 & 차트 영역 -->
+        <!-- AI & Chart -->
         <div class="border-t border-gray-100 pt-8 pb-4">
             <div class="bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-2xl p-5 mb-6 shadow-sm relative overflow-hidden">
                 <div class="flex items-center gap-3 mb-2">
@@ -299,8 +332,18 @@
 
     <!-- 모달들 -->
     <div id="scannerOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
-        <div class="relative w-full max-w-[300px] aspect-square rounded-3xl overflow-hidden shadow-2xl bg-black"><div id="qr-reader"></div></div>
-        <button onclick="stopQrScanner()" class="mt-8 px-6 py-2 bg-white/20 text-white rounded-full text-sm font-bold">닫기</button>
+        <div class="relative w-full max-w-[300px] aspect-square rounded-3xl overflow-hidden shadow-2xl bg-black">
+            <div id="qr-reader"></div>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div class="scan-frame-container">
+                    <div class="laser-line"></div>
+                    <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
+                    <div class="scan-corner bl"></div><div class="scan-corner br"></div>
+                </div>
+                <p class="text-white/90 text-sm mt-6 font-medium animate-pulse text-center">QR코드를 인식시켜 주세요</p>
+            </div>
+        </div>
+        <button onclick="stopQrScanner()" class="mt-8 px-6 py-2 bg-white/20 text-white rounded-full text-sm font-bold backdrop-blur-md border border-white/10 hover:bg-white/30 transition-all">닫기</button>
     </div>
     
     <div id="scanResultModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
@@ -390,17 +433,12 @@
         window.addEventListener('load', function() {
             if (window.lucide) { lucide.createIcons(); }
             manageDailyReset();
-            fetchNews().then(() => reloadData());
-            setInterval(reloadData, 300000); 
+            fetchNews().then(() => fetchSutData());
+            setInterval(() => { fetchNews(); fetchSutData(); }, 300000); 
             updateSliderVisual(10);
         });
 
-        function reloadData() {
-            fetchRetryCount = 0;
-            fetchSutData();
-        }
-
-        ui.krwInput.addEventListener('input', function(e) {
+        krwInput.addEventListener('input', function(e) {
             let val = e.target.value.replace(/[^0-9]/g, '');
             if (val.length > 1 && val.startsWith('0')) val = val.substring(1);
             inputAmount = val;
@@ -408,7 +446,6 @@
             updateScreenState();
         });
 
-        // Discount Logic
         function setDiscount(rate) {
             discountRate = rate;
             updateDiscountUI(rate); 
@@ -460,7 +497,6 @@
             }
         }
 
-        // Data & API
         function calculateQualityScore(source, data) {
             let score = 0;
             const now = Date.now();
@@ -671,7 +707,8 @@
              
              data.forEach(d => {
                  const date = new Date(d.time*1000);
-                 if(new Intl.DateTimeFormat('ko-KR', kstOptions).format(date) === todayStr) todayData.push(d); else pastData.push(d);
+                 const dateStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(date);
+                 if(dateStr === todayStr) todayData.push(d); else pastData.push(d);
              });
              
              if(pastData.length>0 && todayData.length>0) todayData.unshift(pastData[pastData.length-1]);
@@ -718,24 +755,28 @@
              const textArea = document.createElement("textarea"); textArea.value = textToCopy; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
              showToast(`${textToCopy} SUT 복사되었어요`);
         }
-        function handleSendTransfer() { window.location.href = "https://link.trustwallet.com/open"; }
-        function goToStore() {
-             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-             if (/android/i.test(userAgent)) window.location.href = "https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp";
-             else window.location.href = "https://apps.apple.com/app/trust-ethereum-wallet/id1288339409";
-        }
-        function copyAndOpenWallet() {
-             const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-             showToast("주소가 복사됐어요! 지갑을 열게요.");
-             closeResultModal();
-             setTimeout(() => { window.location.href = "https://link.trustwallet.com/open"; }, 500);
-             setTimeout(() => { if (!document.hidden && !document.webkitHidden) { manualOpenModal.classList.remove('hidden'); manualOpenModal.classList.add('flex'); } }, 2500);
+        function handleSendTransfer() { 
+            const amountText = ui.sutAmountDisplay.innerText.replace(/,/g, '');
+            const amount = parseFloat(amountText);
+            if (!amount || amount <= 0) { alert("결제할 금액을 먼저 입력해주세요."); ui.krwInput.focus(); return; }
+            if (!scannedAddress) { alert("매장의 QR코드를 먼저 스캔해주세요. 스캐너를 켭니다."); startQrScanner(); return; }
+
+            // 1. Copy
+            const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
+            showToast(`${amountText} SUT 복사됨! 지갑이 실행됩니다.`);
+
+            // 2. Open Wallet
+            setTimeout(() => {
+                const assetId = "c966_t0x98965474ecbec2f532f1f780ee37b0b05f77ca55";
+                const deepLink = `https://link.trustwallet.com/send?asset=${assetId}&address=${scannedAddress}&amount=${amount}`;
+                window.location.href = deepLink;
+            }, 800);
         }
         function closeResultModal() { document.getElementById('scanResultModal').classList.add('hidden'); }
         function closeManualModal() { document.getElementById('manualOpenModal').classList.add('hidden'); }
         function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
         function showToast(m) { const t=document.getElementById('toast'); if(t){ t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000);}}
-        function startQrScanner() { document.getElementById('scannerOverlay').classList.remove('hidden'); document.getElementById('scannerOverlay').classList.add('flex'); if(html5QrCode){try{html5QrCode.clear()}catch{}} html5QrCode = new Html5Qrcode("qr-reader"); const config={fps:10, qrbox:(w,h)=>({width:250,height:250})}; html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");}); }
+        function startQrScanner() { isProcessingScan = false; document.getElementById('scannerOverlay').classList.remove('hidden'); document.getElementById('scannerOverlay').classList.add('flex'); if(html5QrCode){try{html5QrCode.clear()}catch{}} html5QrCode = new Html5Qrcode("qr-reader"); const config={fps:10, qrbox:(w,h)=>({width:250,height:250})}; html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");}); }
         function stopQrScanner() { if(html5QrCode) html5QrCode.stop().then(()=>document.getElementById('scannerOverlay').classList.add('hidden')).catch(()=>{}); else document.getElementById('scannerOverlay').classList.add('hidden'); }
         function onScanSuccess(d) { if(isProcessingScan) return; isProcessingScan=true; document.getElementById('detectingOverlay').classList.remove('hidden'); setTimeout(()=>{ scannedAddress=d; stopQrScanner(); scannedAddressDisplay.innerText=d; scanResultModal.classList.remove('hidden'); }, 800); }
     </script>
