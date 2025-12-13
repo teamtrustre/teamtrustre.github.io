@@ -74,13 +74,28 @@
             flex: 1;
             overflow-y: auto;
             padding-bottom: 140px; 
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
+        #main-content::-webkit-scrollbar { display: none; }
 
         .num-font { font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
 
         .amount-input {
-            border: none; background: transparent; font-size: 2.5rem; font-weight: 700;
-            color: #333d4b; width: 100%; outline: none; padding: 0; caret-color: #9333ea; border-radius: 0;
+            border: none; 
+            background: transparent; 
+            font-size: 2.5rem; 
+            font-weight: 700;
+            color: #333d4b; 
+            /* [수정] 초기 너비를 최소화하여 '원'이 바로 붙도록 함 */
+            width: 1ch; 
+            min-width: 1ch;
+            outline: none; 
+            padding: 0; 
+            margin: 0;
+            caret-color: #9333ea; 
+            border-radius: 0;
+            text-align: left;
         }
         .amount-input::placeholder { color: #b0b8c1; }
 
@@ -167,13 +182,16 @@
             color: #7e22ce; 
             border-color: #d8b4fe;
         }
-        .discount-btn.inactive:hover {
-            background-color: #e9d5ff;
-        }
+        .discount-btn.inactive:hover { background-color: #e9d5ff; }
 
         .status-indicator.bg-green-500 { background-color: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
         .status-indicator.bg-yellow-400 { background-color: #facc15; }
         .status-indicator.bg-red-500 { background-color: #ef4444; }
+
+        /* 모달 스타일 */
+        .modal-label { font-size: 11px; color: #6b7280; margin-bottom: 2px; }
+        .modal-value { font-size: 14px; font-weight: bold; color: #1f2937; word-break: break-all; }
+        .modal-box { background: #f9fafb; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
     </style>
 </head>
 <body class="max-w-md mx-auto bg-white shadow-2xl relative">
@@ -202,18 +220,20 @@
             </div>
         </div>
         
-        <h1 class="text-2xl font-bold text-[#191f28] leading-tight">
+        <h1 class="text-2xl font-bold text-[#191f28] leading-tight text-left">
             결제할 금액을<br>입력해 주세요
         </h1>
     </header>
 
     <!-- 메인 컨텐츠 -->
     <main class="flex-1 flex flex-col px-6 overflow-y-auto pb-32">
-        <div class="mt-4 relative shrink-0">
+        <!-- [수정] pl-4로 입력 영역 우측 이동 및 정렬 -->
+        <div class="mt-4 flex items-center justify-start w-full relative pl-4">
             <input type="tel" id="krwInput" class="amount-input num-font" placeholder="0" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
-            <span class="absolute right-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-[#333d4b] pointer-events-none">원</span>
+            <span class="text-2xl font-bold text-[#333d4b] ml-1 pointer-events-none shrink-0">원</span>
         </div>
-        <div id="krwKorean" class="text-sm text-gray-400 font-medium text-right h-5 mb-2 shrink-0"></div>
+        <!-- [수정] 한글 금액도 pl-4.5로 우측 이동 -->
+        <div id="krwKorean" class="text-sm text-gray-400 font-medium text-left h-5 mb-2 shrink-0 w-full pl-4.5"></div>
 
         <div class="bg-[#f2f4f6] rounded-2xl p-5 mt-2 transition-all duration-300 transform scale-95 opacity-50 shrink-0 mb-8" id="resultCard">
             <div class="flex justify-between items-center mb-4">
@@ -226,8 +246,6 @@
 
             <!-- 할인율 선택 UI -->
             <div class="mb-5 bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-stretch gap-4 h-[160px]">
-                
-                <!-- Left: Info & Buttons -->
                 <div class="flex flex-col justify-between flex-1">
                     <div class="flex flex-col items-start">
                         <span class="text-[10px] font-bold text-slate-400 mb-0.5">현재 할인율</span>
@@ -236,14 +254,12 @@
                         </div>
                     </div>
                     
-                    <!-- Buttons Stack (gap-1로 수정) -->
-                    <div class="flex flex-col gap-1 mt-2">
+                    <div class="flex flex-col gap-2 mt-2">
                         <button id="btn20" onclick="setDiscount(20)" class="discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">20%</button>
                         <button id="btn10" onclick="setDiscount(10)" class="discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">10%</button>
                     </div>
                 </div>
 
-                <!-- Right: Vertical Slider -->
                 <div class="vertical-slider-container">
                     <input type="range" id="discountSlider" min="0" max="50" step="10" value="10" 
                            oninput="updateDiscountFromSlider(this.value)">
@@ -255,8 +271,6 @@
             <div class="flex items-baseline gap-1 mb-1">
                 <span id="sutAmount" class="text-3xl font-bold text-purple-600 num-font">0</span>
                 <span class="text-lg font-bold text-purple-600">SUT</span>
-                
-                <!-- 도움말 아이콘 -->
                 <button onclick="toggleInfo()" class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 ml-1 translate-y-0.5" aria-label="도움말 보기">
                     <i data-lucide="help-circle" class="w-4 h-4"></i>
                 </button>
@@ -322,8 +336,8 @@
     <!-- 하단 버튼 -->
     <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-6 z-30 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] rounded-b-none">
         <div class="flex gap-3">
-            <button id="copyBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="copyResult()">수량 복사</button>
-            <button id="walletBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="handleSendTransfer()">
+            <button id="copyBtnF" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="copyResult()">수량 복사</button>
+            <button id="walletBtnF" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50" disabled onclick="handleSendTransfer()">
                 <img src="https://trustwallet.com/assets/images/favicon.png" class="w-6 h-6 rounded-full inline-block mr-1" alt="Trust">
                 송금하기
             </button>
@@ -346,11 +360,29 @@
         <button onclick="stopQrScanner()" class="mt-8 px-6 py-2 bg-white/20 text-white rounded-full text-sm font-bold backdrop-blur-md border border-white/10 hover:bg-white/30 transition-all">닫기</button>
     </div>
     
+    <!-- QR Scan Result Modal -->
     <div id="scanResultModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check" class="w-6 h-6 text-green-600"></i></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">스캔 완료!</h3>
-            <p class="text-xs text-gray-500 mb-4 break-all bg-gray-50 p-3 rounded-lg border border-gray-100" id="scannedAddressDisplay">...</p>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">스캔 성공!</h3>
+            
+            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                <div class="mb-2">
+                    <p class="modal-label">지갑 주소</p>
+                    <p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="modal-label">보낼 수량</p>
+                        <p class="modal-value text-purple-600" id="scanModalSut">0 SUT</p>
+                    </div>
+                    <div>
+                        <p class="modal-label">환산 금액</p>
+                        <p class="modal-value text-gray-800" id="scanModalKrw">0원</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="space-y-2">
                 <button onclick="copyAndOpenWallet()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">주소 복사하고 지갑 열기</button>
                 <button onclick="closeResultModal()" class="w-full text-gray-400 text-sm py-2">닫기</button>
@@ -358,6 +390,31 @@
         </div>
     </div>
     
+    <!-- Send Modal -->
+    <div id="sendModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="send" class="w-6 h-6 text-blue-600"></i></div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">송금 준비</h3>
+            <p class="text-sm text-gray-500 mb-4">갯수를 복사했어요. 앱을 켤게요.</p>
+
+            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="modal-label">보낼 수량</p>
+                        <p class="modal-value text-purple-600" id="sendModalSut">0 SUT</p>
+                    </div>
+                    <div>
+                        <p class="modal-label">환산 금액</p>
+                        <p class="modal-value text-gray-800" id="sendModalKrw">0원</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="directOpenWallet()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">지금 지갑 열기</button>
+            <button onclick="document.getElementById('sendModal').classList.add('hidden')" class="w-full text-gray-400 text-sm py-2 mt-1">닫기</button>
+        </div>
+    </div>
+
     <div id="manualOpenModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
             <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i></div>
@@ -405,6 +462,8 @@
             resultCard: document.getElementById('resultCard'),
             copyBtn: document.getElementById('copyBtn'),
             walletBtn: document.getElementById('walletBtn'),
+            copyBtnF: document.getElementById('copyBtnF'), // Footer Buttons
+            walletBtnF: document.getElementById('walletBtnF'),
             statusIndicator: document.getElementById('statusIndicator'),
             refreshIcon: document.getElementById('refreshIcon'),
             refreshText: document.getElementById('refreshText'),
@@ -416,7 +475,13 @@
             discountDisplay: document.getElementById('discountDisplay'),
             discountSlider: document.getElementById('discountSlider'),
             btn10: document.getElementById('btn10'),
-            btn20: document.getElementById('btn20')
+            btn20: document.getElementById('btn20'),
+            // Modals elements
+            scanModalAddress: document.getElementById('scanModalAddress'),
+            scanModalSut: document.getElementById('scanModalSut'),
+            scanModalKrw: document.getElementById('scanModalKrw'),
+            sendModalSut: document.getElementById('sendModalSut'),
+            sendModalKrw: document.getElementById('sendModalKrw')
         };
 
         function manageDailyReset() {
@@ -433,19 +498,53 @@
         window.addEventListener('load', function() {
             if (window.lucide) { lucide.createIcons(); }
             manageDailyReset();
-            fetchNews().then(() => fetchSutData());
+            fetchNews().then(() => reloadData());
             setInterval(() => { fetchNews(); fetchSutData(); }, 300000); 
             updateSliderVisual(10);
+            
+            // [NEW] Input Width Adjuster (Init)
+            adjustInputWidth();
         });
 
-        krwInput.addEventListener('input', function(e) {
+        function reloadData() {
+            fetchRetryCount = 0;
+            fetchSutData();
+        }
+
+        ui.krwInput.addEventListener('input', function(e) {
             let val = e.target.value.replace(/[^0-9]/g, '');
             if (val.length > 1 && val.startsWith('0')) val = val.substring(1);
             inputAmount = val;
             e.target.value = val ? Number(val).toLocaleString() : '';
             updateScreenState();
+            adjustInputWidth();
         });
+        
+        // [NEW] Dynamic Input Width Function (Sensitive & Font Matched)
+        function adjustInputWidth() {
+            const val = ui.krwInput.value || ui.krwInput.placeholder;
+            
+            // Measure precise width using canvas or hidden element
+            // Using hidden span for better accuracy with custom fonts
+            const span = document.createElement('span');
+            span.style.font = window.getComputedStyle(ui.krwInput).font;
+            span.style.fontWeight = window.getComputedStyle(ui.krwInput).fontWeight;
+            span.style.fontSize = window.getComputedStyle(ui.krwInput).fontSize;
+            span.style.letterSpacing = window.getComputedStyle(ui.krwInput).letterSpacing;
+            span.style.visibility = 'hidden';
+            span.style.position = 'absolute';
+            span.style.whiteSpace = 'pre';
+            span.innerText = val;
+            document.body.appendChild(span);
+            
+            // Set width + small buffer
+            const width = span.offsetWidth;
+            ui.krwInput.style.width = (width + 2) + 'px'; // +2px buffer
+            
+            document.body.removeChild(span);
+        }
 
+        // Discount Logic
         function setDiscount(rate) {
             discountRate = rate;
             updateDiscountUI(rate); 
@@ -483,20 +582,21 @@
                 ui.resultCard.classList.add('opacity-50', 'scale-95');
                 ui.resultCard.classList.remove('opacity-100', 'scale-100', 'bg-purple-50');
                 ui.resultCard.classList.add('bg-[#f2f4f6]');
-                disableButton(ui.copyBtn);
-                disableButton(ui.walletBtn);
+                disableButton(ui.copyBtn); disableButton(ui.copyBtnF);
+                disableButton(ui.walletBtn); disableButton(ui.walletBtnF);
                 ui.sutAmountDisplay.innerText = '0';
             } else {
                 const numVal = Number(inputAmount);
                 ui.krwKorean.innerText = convertToKoreanNumber(numVal) + '원';
                 ui.resultCard.classList.remove('opacity-50', 'scale-95', 'bg-[#f2f4f6]');
                 ui.resultCard.classList.add('opacity-100', 'scale-100', 'bg-purple-50');
-                enableButton(ui.copyBtn, 'bg-gray-200', 'text-gray-800');
-                enableButton(ui.walletBtn, 'bg-purple-600', 'text-white');
+                enableButton(ui.copyBtn, 'bg-gray-200', 'text-gray-800'); enableButton(ui.copyBtnF, 'bg-gray-200', 'text-gray-800');
+                enableButton(ui.walletBtn, 'bg-purple-600', 'text-white'); enableButton(ui.walletBtnF, 'bg-purple-600', 'text-white');
                 calculate();
             }
         }
 
+        // Data & API
         function calculateQualityScore(source, data) {
             let score = 0;
             const now = Date.now();
@@ -707,8 +807,7 @@
              
              data.forEach(d => {
                  const date = new Date(d.time*1000);
-                 const dateStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(date);
-                 if(dateStr === todayStr) todayData.push(d); else pastData.push(d);
+                 if(new Intl.DateTimeFormat('ko-KR', kstOptions).format(date) === todayStr) todayData.push(d); else pastData.push(d);
              });
              
              if(pastData.length>0 && todayData.length>0) todayData.unshift(pastData[pastData.length-1]);
@@ -741,8 +840,8 @@
         
         function toggleInfo() { const el = document.getElementById('infoText'); if(el) el.classList.toggle('hidden'); }
         function convertToKoreanNumber(n) { if(n===0)return''; const u=['','만','억','조']; let r=''; let t=n; for(let i=0;i<u.length;i++){ let c=t%10000; t=Math.floor(t/10000); if(c>0) r=c.toLocaleString()+u[i]+' '+r; } return r.trim(); }
-        function disableButton(b) { b.disabled=true; b.className="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-lg py-4 rounded-xl transition-all flex items-center justify-center gap-2"; }
-        function enableButton(b,bg,tc) { b.disabled=false; b.className=`flex-1 ${bg} ${tc} font-bold text-lg py-4 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm`; }
+        function disableButton(b) { b.disabled=true; b.className="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"; }
+        function enableButton(b,bg,tc) { b.disabled=false; b.className=`flex-1 ${bg} ${tc} font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm`; }
         function calculate() {
             if(!inputAmount || currentSutPrice===0 || priceGrade === 'D') { ui.sutAmountDisplay.innerText='0'; return; }
             const krw = parseInt(inputAmount);
@@ -755,30 +854,84 @@
              const textArea = document.createElement("textarea"); textArea.value = textToCopy; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
              showToast(`${textToCopy} SUT 복사되었어요`);
         }
+        
+        // Handle Send Transfer
         function handleSendTransfer() { 
             const amountText = ui.sutAmountDisplay.innerText.replace(/,/g, '');
             const amount = parseFloat(amountText);
+            const krwText = ui.krwInput.value;
+
             if (!amount || amount <= 0) { alert("결제할 금액을 먼저 입력해주세요."); ui.krwInput.focus(); return; }
-            if (!scannedAddress) { alert("매장의 QR코드를 먼저 스캔해주세요. 스캐너를 켭니다."); startQrScanner(); return; }
 
-            // 1. Copy
+            // 1. Copy SUT
             const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-            showToast(`${amountText} SUT 복사됨! 지갑이 실행됩니다.`);
+            
+            // 2. Populate & Show Modal
+            ui.sendModalSut.innerText = `${amountText} SUT`;
+            ui.sendModalKrw.innerText = `${krwText}원`;
+            document.getElementById('sendModal').classList.remove('hidden');
+            document.getElementById('sendModal').classList.add('flex');
 
-            // 2. Open Wallet
-            setTimeout(() => {
-                const assetId = "c966_t0x98965474ecbec2f532f1f780ee37b0b05f77ca55";
-                const deepLink = `https://link.trustwallet.com/send?asset=${assetId}&address=${scannedAddress}&amount=${amount}`;
-                window.location.href = deepLink;
-            }, 800);
+            // 3. Auto Redirect
+            setTimeout(directOpenWallet, 2000); 
         }
+
+        // [NEW] Direct Open Wallet function
+        function directOpenWallet() {
+             window.location.href = "https://link.trustwallet.com/open";
+        }
+
+        function goToStore() {
+             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+             if (/android/i.test(userAgent)) window.location.href = "https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp";
+             else window.location.href = "https://apps.apple.com/app/trust-ethereum-wallet/id1288339409";
+        }
+        
+        // [MODIFIED] Copy And Open (From Scan)
+        function copyAndOpenWallet() {
+             const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
+             showToast("주소가 복사되었습니다. 앱을 켤게요."); // Toast Update
+             closeResultModal();
+             setTimeout(() => { window.location.href = "https://link.trustwallet.com/open"; }, 800);
+             // Removed manual open modal timeout to simplify as per request
+        }
+
         function closeResultModal() { document.getElementById('scanResultModal').classList.add('hidden'); }
         function closeManualModal() { document.getElementById('manualOpenModal').classList.add('hidden'); }
         function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
         function showToast(m) { const t=document.getElementById('toast'); if(t){ t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000);}}
-        function startQrScanner() { isProcessingScan = false; document.getElementById('scannerOverlay').classList.remove('hidden'); document.getElementById('scannerOverlay').classList.add('flex'); if(html5QrCode){try{html5QrCode.clear()}catch{}} html5QrCode = new Html5Qrcode("qr-reader"); const config={fps:10, qrbox:(w,h)=>({width:250,height:250})}; html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");}); }
-        function stopQrScanner() { if(html5QrCode) html5QrCode.stop().then(()=>document.getElementById('scannerOverlay').classList.add('hidden')).catch(()=>{}); else document.getElementById('scannerOverlay').classList.add('hidden'); }
-        function onScanSuccess(d) { if(isProcessingScan) return; isProcessingScan=true; document.getElementById('detectingOverlay').classList.remove('hidden'); setTimeout(()=>{ scannedAddress=d; stopQrScanner(); scannedAddressDisplay.innerText=d; scanResultModal.classList.remove('hidden'); }, 800); }
+        
+        // QR Functions (Corrected)
+        function startQrScanner() { 
+            isProcessingScan = false; // Reset flag
+            document.getElementById('scannerOverlay').classList.remove('hidden'); 
+            document.getElementById('scannerOverlay').classList.add('flex'); 
+            if(html5QrCode){try{html5QrCode.clear()}catch{}} 
+            html5QrCode = new Html5Qrcode("qr-reader"); 
+            const config={fps:10, qrbox:(w,h)=>({width:250,height:250})}; 
+            html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");}); 
+        }
+        function stopQrScanner() { 
+            if(html5QrCode) html5QrCode.stop().then(()=>document.getElementById('scannerOverlay').classList.add('hidden')).catch(()=>{}); 
+            else document.getElementById('scannerOverlay').classList.add('hidden'); 
+        }
+        function onScanSuccess(d) { 
+            if(isProcessingScan) return; 
+            isProcessingScan=true; 
+            // document.getElementById('detectingOverlay').classList.remove('hidden'); // Optional overlay
+            // Slight delay for UX
+            setTimeout(()=>{ 
+                scannedAddress=d; 
+                stopQrScanner(); 
+                // Populate Scan Modal
+                ui.scanModalAddress.innerText = d;
+                ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
+                ui.scanModalKrw.innerText = ui.krwInput.value + "원";
+                
+                document.getElementById('scanResultModal').classList.remove('hidden'); 
+                document.getElementById('scanResultModal').classList.add('flex'); // Add flex for centering
+            }, 500); 
+        }
     </script>
 </body>
 </html>
