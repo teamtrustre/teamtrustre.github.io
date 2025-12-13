@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- [SEO 최적화] -->
-    <title>SUT 계산기 - 슈퍼트러스트(SuperTrust) 코인 실시간 시세 및 결제</title>
+    <title>SUT 계산기 - 슈퍼트러스트 실시간 계산</title>
     <meta name="description" content="SUT(슈퍼트러스트) 코인 실시간 시세 확인 및 원화(KRW) 계산기. L2U(레저투유) 결제 시 할인율 자동 계산과 트러스트월렛 송금 기능을 제공합니다.">
     <meta name="keywords" content="SUT, SUT코인, 슈퍼트러스트, SuperTrust, SUT 계산기, 코인 계산기, L2U, 레저투유, trustre, 트러스트리">
     <meta name="author" content="trustre">
@@ -14,7 +14,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="SUT 코인 결제 계산기 - 슈퍼트러스트">
     <meta property="og:description" content="실시간 SUT 시세 확인 및 L2U 할인 결제 금액을 계산해보세요.">
-    <meta property="og:site_name" content="SUT Pay Calculator">
+    <meta property="og:site_name" content="trustre">
 
     <meta name="robots" content="index, follow">
 
@@ -22,7 +22,7 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "SUT Pay Calculator",
+      "name": "trustre",
       "alternateName": ["슈퍼트러스트 계산기", "SUT 코인 계산기"],
       "description": "SUT(SuperTrust) 코인의 실시간 KRW 가격을 확인하고 결제 금액을 계산하는 웹 애플리케이션입니다.",
       "applicationCategory": "FinanceApplication",
@@ -87,6 +87,7 @@
             font-size: 2.5rem; 
             font-weight: 700;
             color: #333d4b; 
+            /* 너비는 JS로 제어 */
             width: 30px; 
             min-width: 30px;
             outline: none; 
@@ -152,7 +153,6 @@
             cursor: pointer;
             transform: rotate(-90deg);
             transform-origin: center;
-            
             background-image: linear-gradient(#9333ea, #9333ea);
             background-size: 20% 100%;
             background-repeat: no-repeat;
@@ -404,6 +404,25 @@
         </div>
     </div>
 
+    <div id="manualOpenModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i></div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">앱 실행 오류</h3>
+            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">자동으로 앱을 열 수 없어요.<br><span class="font-bold text-purple-600">지갑 주소는 복사되었으니</span><br>앱을 직접 실행해주세요.</p>
+            <button onclick="closeManualModal()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">확인</button>
+        </div>
+    </div>
+    
+    <div id="storeRedirectModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="download" class="w-6 h-6 text-purple-600"></i></div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">스토어로 이동할까요?</h3>
+            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">오류로 앱을 실행하지 못해<br>스토어로 이동할게요.<br><span class="text-xs text-purple-500 mt-1 block">* 결제 수량(SUT)은 복사되었어요.</span></p>
+            <button onclick="goToStore()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">스토어로 이동</button>
+            <button onclick="closeStoreModal()" class="w-full text-gray-400 text-sm mt-2">닫기</button>
+        </div>
+    </div>
+
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-[rgba(51,61,75,0.9)] text-white px-5 py-3 rounded-full text-sm font-medium opacity-0 transition-opacity duration-300 pointer-events-none z-[90]">복사되었어요</div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -432,8 +451,6 @@
             resultCard: document.getElementById('resultCard'),
             copyBtn: document.getElementById('copyBtn'),
             walletBtn: document.getElementById('walletBtn'),
-            copyBtnF: document.getElementById('copyBtnF'), // Footer Buttons
-            walletBtnF: document.getElementById('walletBtnF'),
             statusIndicator: document.getElementById('statusIndicator'),
             refreshIcon: document.getElementById('refreshIcon'),
             refreshText: document.getElementById('refreshText'),
@@ -830,7 +847,7 @@
 
             if (!amount || amount <= 0) { alert("결제할 금액을 먼저 입력해주세요."); ui.krwInput.focus(); return; }
 
-            // 1. Copy Amount
+            // 1. Copy SUT
             const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
             
             // 2. Populate Modal
@@ -839,18 +856,12 @@
             document.getElementById('sendModal').classList.remove('hidden');
             document.getElementById('sendModal').classList.add('flex');
 
-            // 3. Try to open app immediately (fallback to universal link)
-            setTimeout(directOpenWallet, 1500); 
+            // 3. Auto Redirect
+            setTimeout(directOpenWallet, 2000); 
         }
 
         function directOpenWallet() {
-             // 1. Try Custom Scheme (Best for installed apps)
-             window.location.href = "trust://open";
-             
-             // 2. Fallback to Universal Link (If custom scheme fails or on desktop)
-             setTimeout(() => {
-                 window.location.href = "https://link.trustwallet.com/open";
-             }, 500);
+             window.location.href = "https://link.trustwallet.com/open";
         }
 
         // [MODIFIED] Copy And Open (From Scan)
@@ -861,10 +872,7 @@
              
              // Direct Open Logic with Deep Link
              setTimeout(() => {
-                 window.location.href = "trust://open";
-                 setTimeout(() => {
-                     window.location.href = "https://link.trustwallet.com/open";
-                 }, 500);
+                 window.location.href = "https://link.trustwallet.com/open";
              }, 800);
         }
 
