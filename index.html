@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- [SEO 최적화] -->
-    <title>SUT 계산기 - 슈퍼트러스트(SuperTrust) 코인 실시간 시세 및 결제</title>
-    <meta name="description" content="SUT(슈퍼트러스트) 코인 실시간 시세 확인 및 원화(KRW) 계산기. 편리한 자동 계산과 트러스트월렛 이동 기능을 제공합니다.">
-    <meta name="keywords" content="SUT, SUT코인, 슈퍼트러스트, SuperTrust, SUT 계산기, 코인 계산기, L2U, 레저투유, trustre, 트러스트리">
+    <title>SUT 계산기 - 슈퍼트러스트(SuperTrust) 실시간 시세 확인 및 계산</title>
+    <meta name="description" content="SUT(슈퍼트러스트) 코인의 현재 가격과 실시간 시세를 확인하고, 할인율을 적용하여 자동으로 결제 금액을 계산하세요. SUT 실시간 시세로 편리하게 계산할 수 있습니다.">
+    <meta name="keywords" content="SUT, SUT코인, 슈퍼트러스트, SuperTrust, SUT 계산기, 코인 계산기, 실시간 시세, 자동 계산, L2U, 레저투유, trustre, 트러스트리">
     <meta name="author" content="trustre">
     
-    <!-- [SNS 공유 최적화] -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="실시간으로 SUT 계산하기">
-    <meta property="og:description" content="실시간 SUT 시세 확인 및 할인율을 간편하게 계산해보세요.">
+    <meta property="og:title" content="SUT 실시간 시세 확인 및 계산기">
+    <meta property="og:description" content="SUT의 현재 가격을 확인하고 할인율을 적용해 자동 계산해보세요.">
     <meta property="og:site_name" content="trustre">
 
     <meta name="robots" content="index, follow">
@@ -35,13 +33,9 @@
     }
     </script>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 폰트 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <!-- QR 스캐너 -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- 차트 라이브러리 -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
@@ -129,7 +123,6 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2); letter-spacing: 0.05em;
         }
 
-        /* Vertical Slider Style */
         .vertical-slider-container {
             position: relative;
             width: 32px;
@@ -186,7 +179,6 @@
         .status-indicator.bg-yellow-400 { background-color: #facc15; }
         .status-indicator.bg-red-500 { background-color: #ef4444; }
 
-        /* 모달 스타일 */
         .modal-label { font-size: 11px; color: #6b7280; margin-bottom: 2px; }
         .modal-value { font-size: 14px; font-weight: bold; color: #1f2937; word-break: break-all; }
         .modal-box { background: #f9fafb; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
@@ -281,7 +273,7 @@
             <!-- Buttons inside card -->
             <div class="flex gap-3 mt-6">
                 <button id="copyBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="copyResult()">
-                    <i data-lucide="copy" class="w-5 h-5"></i> 수량 복사
+                    수량 복사
                 </button>
                 <button id="walletBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="handleSendTransfer()">
                     <i data-lucide="send" class="w-5 h-5"></i> 송금하기
@@ -358,6 +350,7 @@
                     <p class="modal-label">지갑 주소</p>
                     <p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p>
                 </div>
+                <!-- 금액 미입력 시 숨김 -->
                 <div id="scanAmountDetails" class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-200 pt-2 hidden">
                     <div>
                         <p class="modal-label">보낼 수량</p>
@@ -565,7 +558,8 @@
                 ui.resultCard.classList.add('opacity-50', 'scale-95');
                 ui.resultCard.classList.remove('opacity-100', 'scale-100', 'bg-purple-50');
                 ui.resultCard.classList.add('bg-[#f2f4f6]');
-                disableButton(ui.copyBtn); disableButton(ui.walletBtn);
+                disableButton(ui.copyBtn);
+                disableButton(ui.walletBtn);
                 ui.sutAmountDisplay.innerText = '0';
             } else {
                 const numVal = Number(inputAmount);
@@ -793,45 +787,9 @@
                      layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
                      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
                      rightPriceScale: { borderVisible: false },
-                     timeScale: { 
-                        borderVisible: false, 
-                        timeVisible: true, 
-                        secondsVisible: false,
-                        tickMarkFormatter: (time) => {
-                            // X축 하단 라벨 (15:00 등)
-                            const date = new Date(time * 1000);
-                            return date.toLocaleTimeString('ko-KR', { 
-                                timeZone: 'Asia/Seoul', 
-                                hour: '2-digit', 
-                                minute: '2-digit',
-                                hour12: false
-                            });
-                        }
-                     },
+                     timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
                      crosshair: { vertLine: { labelBackgroundColor: '#9333ea' }, horzLine: { labelBackgroundColor: '#9333ea' } },
-                     handleScroll: false, handleScale: false,
-                     // [수정] 툴팁 날짜 포맷 커스텀 (12월 14일   04:10)
-                     localization: { 
-                        timeFormatter: (time) => {
-                            const date = new Date(time * 1000);
-                            // KST 기준 파싱
-                            const formatter = new Intl.DateTimeFormat('ko-KR', {
-                                timeZone: 'Asia/Seoul',
-                                month: 'numeric',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                            });
-                            const parts = formatter.formatToParts(date);
-                            const m = parts.find(p => p.type === 'month').value;
-                            const d = parts.find(p => p.type === 'day').value;
-                            const h = parts.find(p => p.type === 'hour').value;
-                            const min = parts.find(p => p.type === 'minute').value;
-                            
-                            return `${m}월 ${d}일   ${h}:${min}`;
-                        }
-                    }
+                     handleScroll: false, handleScale: false
                  });
                  pastSeries = chartInstance.addAreaSeries({ topColor: 'rgba(156, 163, 175, 0.4)', bottomColor: 'rgba(156, 163, 175, 0.0)', lineColor: '#9ca3af', lineWidth: 2, crosshairMarkerVisible: false });
                  todaySeries = chartInstance.addAreaSeries({ topColor: 'rgba(147, 51, 234, 0.2)', bottomColor: 'rgba(147, 51, 234, 0.0)', lineColor: '#9333ea', lineWidth: 2 });
@@ -913,8 +871,17 @@
             setTimeout(directOpenWallet, 2000); 
         }
 
+        // [MODIFIED] Use 'trust://' scheme
         function directOpenWallet() {
-             window.location.href = "https://link.trustwallet.com/open";
+             // Try deep link first
+             window.location.href = "trust://open";
+             
+             // Fallback to web link after delay (for desktop or if app not installed)
+             setTimeout(() => {
+                 // Check if user is still on page (simple check)
+                 if (document.hidden) return; 
+                 window.location.href = "https://link.trustwallet.com/open";
+             }, 1000);
         }
 
         // [MODIFIED] Copy And Open (From Scan)
@@ -923,9 +890,8 @@
              showToast("주소가 복사되었습니다. 앱을 켤게요."); 
              closeResultModal();
              
-             // Direct Open Logic with Deep Link
              setTimeout(() => {
-                 window.location.href = "https://link.trustwallet.com/open";
+                 directOpenWallet();
              }, 800);
         }
 
@@ -934,7 +900,6 @@
         function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
         function showToast(m) { const t=document.getElementById('toast'); if(t){ t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000);}}
         
-        // QR Functions (Corrected)
         function startQrScanner() { 
             isProcessingScan = false; // Reset flag
             document.getElementById('scannerOverlay').classList.remove('hidden'); 
@@ -955,7 +920,6 @@
                 scannedAddress=d; 
                 stopQrScanner(); 
                 
-                // [NEW] Logic: Check input amount
                 const inputVal = ui.krwInput.value;
                 const hasAmount = inputVal && inputVal !== '0';
                 
@@ -965,7 +929,6 @@
                     ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
                     ui.scanModalKrw.innerText = inputVal + "원";
                 } else {
-                    // Hide amount details if 0
                     ui.scanAmountDetails.classList.add('hidden');
                     ui.scanModalAddress.innerText = d;
                 }
@@ -977,4 +940,3 @@
     </script>
 </body>
 </html>
-
