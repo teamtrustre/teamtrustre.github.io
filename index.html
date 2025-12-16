@@ -189,24 +189,58 @@
         .modal-value { font-size: 14px; font-weight: bold; color: #1f2937; word-break: break-all; }
         .modal-box { background: #f9fafb; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
 
-        /* Enhanced Siri-like Aurora Animation */
-        @keyframes siri-move {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* [NEW] Liquid Swirl Animation in a Circle */
+        @keyframes liquid-swirl {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
-        .siri-gradient {
-            background: linear-gradient(
-                -45deg, 
-                #7c3aed, /* Violet */
-                #9333ea, /* Purple */
-                #c026d3, /* Fuchsia */
-                #4f46e5  /* Indigo */
-            );
-            background-size: 300% 300%;
-            animation: siri-move 4s ease infinite;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+
+        .siri-btn-container {
+            width: 56px;
+            height: 56px;
+            border-radius: 9999px; /* Perfect Circle */
+            position: relative;
+            overflow: hidden; /* This masks the inner liquid to a circle */
             box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+            transform: translateZ(0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            background-color: #f3f4f6; /* Base background */
+        }
+        .siri-btn-container:active { transform: scale(0.95); }
+
+        .siri-btn-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 180%; /* Larger than container to rotate */
+            height: 180%;
+            /* All Purple Gradient Mesh */
+            background: radial-gradient(circle at 50% 50%, rgba(168,85,247,1) 20%, rgba(147,51,234,1) 50%, rgba(192,132,252,1) 80%);
+            background: conic-gradient(from 0deg, #a855f7, #d8b4fe, #9333ea, #c084fc, #a855f7);
+            
+            /* The Blob Shape */
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; 
+            
+            /* Rotation creates the liquid effect inside the circle */
+            animation: liquid-swirl 6s linear infinite; 
+            opacity: 0.9;
+        }
+        
+        /* Fixed Icon Styling */
+        .qr-fixed-content {
+            position: relative;
+            z-index: 10;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
     </style>
 </head>
@@ -233,7 +267,7 @@
             </div>
         </div>
         
-        <h1 class="text-2xl font-bold text-[#191f28] leading-tight text-left">
+        <h1 class="text-2xl font-bold text-[#191f28] leading-tight text-left pl-5">
             결제할 금액을<br>입력해 주세요
         </h1>
     </header>
@@ -241,30 +275,33 @@
     <!-- 메인 컨텐츠 -->
     <main class="flex-1 flex flex-col px-6 overflow-y-auto pb-32">
         <!-- 입력창 영역 -->
-        <div class="mt-4 flex items-center justify-between w-full relative">
+        <div class="mt-4 flex items-center justify-between w-full relative pl-5">
             <div class="flex items-center justify-start flex-1 relative -ml-[2px]">
                 <input type="tel" id="krwInput" class="amount-input num-font" placeholder="0" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
                 <span class="text-2xl font-bold text-[#333d4b] ml-1 pointer-events-none shrink-0">원</span>
             </div>
 
-            <!-- Siri 스타일 오로라 QR 버튼 -->
-            <button onclick="startQrScanner()" class="ml-2 w-12 h-12 siri-gradient rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform group shrink-0 relative overflow-hidden border-none" aria-label="QR 스캔">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-white z-10 relative drop-shadow-md">
-                    <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <rect x="5" y="5" width="2" height="2" fill="currentColor"/>
-                    <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <rect x="17" y="5" width="2" height="2" fill="currentColor"/>
-                    <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <rect x="5" y="17" width="2" height="2" fill="currentColor"/>
-                    <rect x="15" y="15" width="2" height="2" fill="currentColor"/>
-                    <rect x="19" y="19" width="3" height="3" fill="currentColor"/>
-                    <rect x="15" y="19" width="2" height="2" fill="currentColor"/>
-                    <rect x="19" y="15" width="2" height="2" fill="currentColor"/>
-                </svg>
+            <!-- [수정] 원형 컨테이너 + 내부 물방울 모션 + 고정 텍스트 -->
+            <button onclick="startQrScanner()" class="siri-btn-container ml-2 shrink-0" aria-label="QR 스캔">
+                <div class="siri-btn-bg"></div> <!-- Liquid Swirl Background -->
+                
+                <!-- Fixed Content: QR Text + Finders -->
+                <div class="qr-fixed-content">
+                    <div class="relative w-7 h-7 flex items-center justify-center">
+                        <span class="font-black text-[10px] leading-none tracking-tighter drop-shadow-md">QR</span>
+                        <!-- Fixed Corners (Vector) -->
+                        <svg class="absolute inset-0 w-full h-full text-white drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2 2H9V4H4V9H2V2Z" />
+                            <path d="M15 2H22V9H20V4H15V2Z" />
+                            <path d="M2 15H4V20H9V22H2V15Z" />
+                            <path d="M20 15H22V22H15V20H20V15Z" />
+                        </svg>
+                    </div>
+                </div>
             </button>
         </div>
         
-        <div id="krwKorean" class="text-sm text-gray-400 font-medium text-left h-5 mb-2 shrink-0 w-full pl-0.5"></div>
+        <div id="krwKorean" class="text-sm text-gray-400 font-medium text-left h-5 mb-2 shrink-0 w-full pl-5"></div>
 
         <div class="bg-[#f2f4f6] rounded-2xl p-5 mt-2 transition-all duration-300 transform scale-95 opacity-50 shrink-0 mb-8" id="resultCard">
             <div class="flex justify-between items-center mb-1">
@@ -321,7 +358,7 @@
                 </button>
             </div>
             
-            <!-- [NEW] 사용처 보기 버튼 -->
+            <!-- 사용처 보기 버튼 -->
             <a href="https://naver.me/FeNWPtbK" target="_blank" class="w-full mt-3 bg-white border border-gray-200 text-gray-500 font-bold text-sm py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition-all">
                 <i data-lucide="map-pin" class="w-4 h-4"></i>
                 SUT 사용처 보기
@@ -371,16 +408,16 @@
     </main>
 
     <!-- 모달들 -->
-    <div id="scannerOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
+    <div id="scannerOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="relative w-full max-w-[300px] aspect-square rounded-3xl overflow-hidden shadow-2xl bg-black">
             <div id="qr-reader"></div>
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <div class="scan-frame-container">
+                <div class="scan-frame-container" id="scanFrame">
                     <div class="laser-line"></div>
                     <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
                     <div class="scan-corner bl"></div><div class="scan-corner br"></div>
                 </div>
-                <p class="text-white/90 text-sm mt-6 font-medium animate-pulse text-center">QR코드를 인식시켜 주세요</p>
+                <p class="text-white/90 text-sm mt-6 font-medium animate-pulse text-center">QR코드를 스캔하세요</p>
             </div>
         </div>
         <button onclick="stopQrScanner()" class="mt-8 px-6 py-2 bg-white/20 text-white rounded-full text-sm font-bold backdrop-blur-md border border-white/10 hover:bg-white/30 transition-all">닫기</button>
@@ -397,7 +434,6 @@
                     <p class="modal-label">지갑 주소</p>
                     <p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p>
                 </div>
-                <!-- 금액 미입력 시 숨김 -->
                 <div id="scanAmountDetails" class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-200 pt-2 hidden">
                     <div>
                         <p class="modal-label">보낼 수량</p>
@@ -510,7 +546,8 @@
                 scanModalKrw: document.getElementById('scanModalKrw'),
                 scanAmountDetails: document.getElementById('scanAmountDetails'),
                 sendModalSut: document.getElementById('sendModalSut'),
-                sendModalKrw: document.getElementById('sendModalKrw')
+                sendModalKrw: document.getElementById('sendModalKrw'),
+                scanFrame: document.getElementById('scanFrame')
             };
         }
 
@@ -526,7 +563,9 @@
         }
 
         window.addEventListener('load', function() {
-            if (window.lucide) { lucide.createIcons(); }
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
             
             // [Fix] DOM 로드 후 UI 객체 초기화
             initUI();
@@ -640,15 +679,12 @@
         
         function convertToKoreanNumber(num) {
             if(num < 10000) return '';
-            
             const units = ['', '만', '억', '조'];
             let result = '';
             let temp = num;
-            
             for(let i=0; i<units.length; i++) {
                 let chunk = temp % 10000;
                 temp = Math.floor(temp / 10000);
-                
                 if(chunk > 0) {
                     let unitPart = chunk.toLocaleString();
                     if (i > 0) unitPart += units[i]; 
@@ -762,7 +798,7 @@
                     if(ui.chartLoader) ui.chartLoader.classList.add('hidden');
                     if(ui.chartError) {
                         ui.chartError.classList.remove('hidden');
-                        ui.chartError.innerText = "차트 데이터 준비 중 (가격은 정상)";
+                        ui.chartError.innerText = "실시간 차트 데이터 미지원 (가격은 정상입니다)";
                     }
                 }
 
@@ -981,14 +1017,21 @@
         }
 
         function directOpenWallet() {
-             window.location.href = "https://link.trustwallet.com/open";
+             // 1. Try Custom Scheme (Best for installed apps)
+             window.location.href = "trust://open";
+             
+             // 2. Fallback to Universal Link (If custom scheme fails or on desktop)
+             setTimeout(() => {
+                 // Check if user is still on page (simple check)
+                 if (document.hidden) return; 
+                 window.location.href = "https://link.trustwallet.com/open";
+             }, 1000);
         }
 
         // [MODIFIED] Copy And Open (From Scan)
         function copyAndOpenWallet() {
              const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
              showToast("주소가 복사되었습니다. 앱을 켤게요."); 
-             closeResultModal();
              
              // Direct Open Logic with Deep Link
              setTimeout(() => {
@@ -1018,6 +1061,11 @@
         function onScanSuccess(d) { 
             if(isProcessingScan) return; 
             isProcessingScan=true; 
+            
+            // Add Glow Effect on Success
+            const frame = document.getElementById('scanFrame');
+            if(frame) frame.classList.add('scan-success');
+            
             setTimeout(()=>{ 
                 scannedAddress=d; 
                 stopQrScanner(); 
@@ -1039,7 +1087,10 @@
                 
                 document.getElementById('scanResultModal').classList.remove('hidden'); 
                 document.getElementById('scanResultModal').classList.add('flex'); 
-            }, 500); 
+                
+                // Remove Glow Effect
+                if(frame) frame.classList.remove('scan-success');
+            }, 800); // Slightly longer delay to show success effect
         }
     </script>
 </body>
