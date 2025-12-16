@@ -992,29 +992,35 @@
             if(ui.sendModalKrw) ui.sendModalKrw.innerText = `${krwText}원`;
             document.getElementById('sendModal').classList.remove('hidden');
             document.getElementById('sendModal').classList.add('flex');
-            // 3. Auto Redirect
-            setTimeout(directOpenWallet, 2000);
+            
+            // 3. Auto Redirect (Immediately)
+            // [Modified] 딜레이 없이 즉시 실행하여 브라우저 차단 방지
+            directOpenWallet();
         }
+        
         function directOpenWallet() {
+             const now = new Date().getTime();
+             
              // 1. Try Custom Scheme (Best for installed apps)
+             // 앱이 설치되어 있다면 이 방식이 가장 빠릅니다.
              window.location.href = "trust://open";
              
-             // 2. Fallback to Universal Link (If custom scheme fails or on desktop)
+             // 2. Fallback to Universal Link (If custom scheme fails)
+             // 앱이 열리지 않고 페이지에 머물러 있다면(document.hidden이 false), 유니버설 링크 시도
              setTimeout(() => {
-                 // Check if user is still on page (simple check)
-                 if (document.hidden) return;
-                 window.location.href = "https://link.trustwallet.com/open";
+                 if (!document.hidden) {
+                     window.location.href = "https://link.trustwallet.com/open";
+                 }
              }, 1000);
         }
+
         // [MODIFIED] Copy And Open (From Scan)
         function copyAndOpenWallet() {
              const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
              showToast("주소가 복사되었습니다. 앱을 켤게요.");
              
-             // Direct Open Logic with Deep Link
-             setTimeout(() => {
-                 window.location.href = "https://link.trustwallet.com/open";
-             }, 800);
+             // [Modified] 딜레이 없이 즉시 실행
+             directOpenWallet();
         }
         function closeResultModal() { document.getElementById('scanResultModal').classList.add('hidden'); }
         function closeManualModal() { document.getElementById('manualOpenModal').classList.add('hidden'); }
