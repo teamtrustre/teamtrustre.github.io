@@ -248,8 +248,9 @@
             opacity: 0;
             
             /* Smooth transitions */
-            transition: -webkit-clip-path 0.6s cubic-bezier(0.22, 1, 0.36, 1), clip-path 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+            transition: -webkit-clip-path 1s cubic-bezier(0.22, 1, 0.36, 1), clip-path 1s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease, background-color 0.6s ease;
             pointer-events: none; /* Prevent clicks when hidden */
+            background-color: rgba(147, 51, 234, 0.1); /* Start with light purple tint */
         }
         #scannerOverlay.show {
             /* End state: huge circle covering screen */
@@ -257,6 +258,7 @@
             clip-path: circle(200vmax at var(--origin-x) var(--origin-y));
             opacity: 1;
             pointer-events: auto;
+            background-color: rgba(147, 51, 234, 0.8); /* Darker purple for visibility */
         }
         #scannerOverlay.hide {
             /* Exit state: shrink back to nothing */
@@ -264,8 +266,10 @@
             clip-path: circle(0px at var(--origin-x) var(--origin-y));
             opacity: 0;
             /* Faster exit */
-            transition: -webkit-clip-path 0.5s cubic-bezier(0.33, 1, 0.68, 1), clip-path 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.3s ease;
+            transition: -webkit-clip-path 0.8s cubic-bezier(0.33, 1, 0.68, 1), clip-path 0.8s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s ease, background-color 0.5s ease;
+            background-color: rgba(147, 51, 234, 0.1); /* Fade back to light purple */
         }
+        .scan-success { box-shadow: 0 0 20px #a855f7; transition: box-shadow 0.5s; }
     </style>
 </head>
 <body class="max-w-md mx-auto bg-white shadow-2xl relative">
@@ -512,6 +516,26 @@
             <button onclick="closeStoreModal()" class="w-full text-gray-400 text-sm mt-2">닫기</button>
         </div>
     </div>
+    <!-- [NEW] Previous Record Modal -->
+    <div id="previousRecordModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="history" class="w-6 h-6 text-purple-600"></i></div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">이전 기록 상세</h3>
+            
+            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                <div class="mb-2">
+                    <p class="modal-label">환산 금액</p>
+                    <p class="modal-value text-gray-800" id="prevModalKrw">0원</p>
+                </div>
+                <div id="prevAddressDetails" class="mb-2 hidden">
+                    <p class="modal-label">지갑 주소</p>
+                    <p class="modal-value text-xs break-all text-gray-500" id="prevModalAddress">...</p>
+                    <button onclick="copyPrevAddress()" class="w-full bg-gray-500 text-white font-bold py-2 rounded-xl mt-2 active:scale-95 transition-all">주소 복사</button>
+                </div>
+            </div>
+            <button onclick="closePreviousModal()" class="w-full text-gray-400 text-sm py-2">닫기</button>
+        </div>
+    </div>
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-[rgba(51,61,75,0.9)] text-white px-5 py-3 rounded-full text-sm font-medium opacity-0 transition-opacity duration-300 pointer-events-none z-[90]">복사되었어요</div>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -587,6 +611,7 @@
             // UI 초기화 후 호출
             if (ui.discountSlider) updateSliderVisual(10);
             adjustInputWidth();
+            checkAndDisplayPreviousRecord(); // [NEW] Load previous record on page load
             
             // Event Listeners
             if (ui.krwInput) {
@@ -987,6 +1012,9 @@
             // 1. Copy SUT
             const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
             
+            // [NEW] Save to localStorage (no address in this flow)
+            saveLastCalculation(amountText, krwText, '');
+            
             // 2. Populate Modal
             if(ui.sendModalSut) ui.sendModalSut.innerText = `${amountText} SUT`;
             if(ui.sendModalKrw) ui.sendModalKrw.innerText = `${krwText}원`;
@@ -1058,7 +1086,7 @@
                 if(html5QrCode){try{html5QrCode.clear()}catch{}}
                 html5QrCode = new Html5Qrcode("qr-reader");
                 // [Modified] qrbox 크기를 CSS 프레임 크기(260px)와 비슷하게 설정하여 인식률 최적화
-                const config={fps:10, qrbox:{width:250,height:250}, aspectRatio: 1.0};
+                const config={fps:20, qrbox:{width:260,height:260}, aspectRatio: 1.0, disableFlip: false};
                 html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");});
             }, 300);
         }
@@ -1109,10 +1137,14 @@
                     ui.scanModalAddress.innerText = d;
                     ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
                     ui.scanModalKrw.innerText = inputVal + "원";
+                    // [NEW] Save to localStorage
+                    saveLastCalculation(ui.sutAmountDisplay.innerText.replace(/,/g, ''), inputVal, d);
                 } else {
                     // Hide amount details if 0
                     ui.scanAmountDetails.classList.add('hidden');
                     ui.scanModalAddress.innerText = d;
+                    // [NEW] Save with no amount (but address only - optional logic)
+                    saveLastCalculation('', '', d);
                 }
                 
                 document.getElementById('scanResultModal').classList.remove('hidden');
@@ -1121,6 +1153,85 @@
                 // Remove Glow Effect
                 if(frame) frame.classList.remove('scan-success');
             }, 800); // Slightly longer delay to show success effect
+        }
+
+        // [NEW] Save last calculation to localStorage
+        function saveLastCalculation(sutAmount, krwAmount, address) {
+            const data = {
+                timestamp: Date.now(),
+                sutAmount: sutAmount || '',
+                krwAmount: krwAmount || '',
+                address: address || ''
+            };
+            localStorage.setItem('lastCalculation', JSON.stringify(data));
+        }
+
+        // [NEW] Check and display previous record
+        function checkAndDisplayPreviousRecord() {
+            const data = JSON.parse(localStorage.getItem('lastCalculation'));
+            if (!data) return;
+
+            const now = Date.now();
+            if (now - data.timestamp > 300000) { // 5 minutes = 300000 ms
+                localStorage.removeItem('lastCalculation');
+                return;
+            }
+
+            // Create previous record UI if valid
+            const main = document.querySelector('main');
+            if (!main) return;
+
+            const prevDiv = document.createElement('div');
+            prevDiv.id = 'previousRecord';
+            prevDiv.className = 'bg-purple-50 p-3 rounded-xl mb-4 flex justify-between items-center text-sm text-black font-medium';
+
+            let content = '이전 기록: ';
+            if (data.sutAmount) {
+                content += `<span class="font-bold text-lg text-purple-600">${data.sutAmount} SUT</span> (<span class="text-purple-600">${data.krwAmount}원</span>)`;
+            } else {
+                content += '지갑 주소';
+            }
+
+            if (data.address) {
+                // From scan
+                prevDiv.innerHTML = content + `<button onclick="showPreviousDetails()" class="text-purple-600 underline ml-2">지갑 주소 보기</button>`;
+            } else {
+                // From send
+                prevDiv.innerHTML = content;
+            }
+
+            main.insertBefore(prevDiv, ui.resultCard); // Insert before resultCard for visibility
+        }
+
+        // [NEW] Show previous details in modal
+        function showPreviousDetails() {
+            const data = JSON.parse(localStorage.getItem('lastCalculation'));
+            if (!data) return;
+
+            document.getElementById('prevModalKrw').innerText = data.krwAmount ? data.krwAmount + '원' : '없음';
+            const addrDetails = document.getElementById('prevAddressDetails');
+            if (data.address) {
+                addrDetails.classList.remove('hidden');
+                document.getElementById('prevModalAddress').innerText = data.address;
+            } else {
+                addrDetails.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('previousRecordModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // [NEW] Copy previous address
+        function copyPrevAddress() {
+            const addr = document.getElementById('prevModalAddress').innerText;
+            const textArea = document.createElement("textarea"); textArea.value = addr; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
+            showToast("주소 복사되었어요");
+        }
+
+        // [NEW] Close previous modal
+        function closePreviousModal() {
+            document.getElementById('previousRecordModal').classList.add('hidden');
         }
     </script>
 </body>
