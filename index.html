@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SUT(SuperTrust)를 편리하게 계산해보세요</title>
     
-    <title>SUT 계산기 - 슈퍼트러스트(SuperTrust) 실시간 시세 확인 및 계산</title>
-    <meta name="description" content="SUT(슈퍼트러스트) 코인의 현재 가격과 실시간 시세를 확인하고, 할인율을 적용하여 자동으로 결제 금액을 계산하세요. SUT 실시간 시세로 편리하게 계산할 수 있습니다.">
+    <meta name="description" content="SUT(슈퍼트러스트) 코인의 실시간 시세를 확인하고, 할인율을 적용하여 편리하게 결제 금액을 계산하세요.">
     <meta name="keywords" content="SUT, SUT코인, 슈퍼트러스트, SuperTrust, SUT 계산기, 코인 계산기, 실시간 시세, 자동 계산, L2U, 레저투유, trustre, 트러스트리">
     <meta name="author" content="trustre">
-    
     <meta property="og:type" content="website">
     <meta property="og:title" content="SUT 실시간 시세 확인 및 계산기">
     <meta property="og:description" content="SUT의 현재 가격을 확인하고 할인율을 적용해 자동 계산해보세요.">
@@ -40,6 +39,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
+        html { background-color: #f2f4f6; }
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f2f4f6;
@@ -48,8 +48,6 @@
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
         #app-container {
             width: 100%;
@@ -92,18 +90,16 @@
         .price-update { animation: flash 1s ease-out; }
         
         #qr-reader { width: 100%; height: 100%; border: none !important; }
-        /* [Modified] 비디오가 전체 화면을 꽉 채우도록 설정 (모서리 둥글기 제거) */
         #qr-reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; border-radius: 0 !important; }
         #qr-reader__scan_region { background: transparent; }
         #qr-reader__dashboard_section_csr button { display: none; }
         
         .scan-frame-container { position: relative; width: 260px; height: 260px; z-index: 20; }
-        /* [NEW] 주변부 어둡게 처리 (Shadow Mask 효과) */
         .scan-mask {
             position: absolute;
             inset: 0;
             border-radius: 24px;
-            box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.6); /* 프레임 바깥을 반투명 검정으로 덮음 */
+            box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.6);
             pointer-events: none;
         }
 
@@ -115,11 +111,7 @@
         .laser-line { position: absolute; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #d8b4fe, #a855f7, #d8b4fe, transparent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.8); top: 0; animation: radar 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; opacity: 0.8; z-index: 30; }
         @keyframes radar { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
         
-        @keyframes pulse-purple { 0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(147, 51, 234, 0); } 100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); } }
-        .animate-pulse-ring { animation: pulse-purple 1.5s infinite; }
-        
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        #main-content::-webkit-scrollbar { display: none; }
         .glass-badge {
             background: linear-gradient(135deg, rgba(147, 51, 234, 0.9), rgba(107, 33, 168, 0.95));
             box-shadow: 0 4px 6px -1px rgba(126, 34, 206, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -154,7 +146,6 @@
             background-repeat: no-repeat;
             transition: background-size 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
-        
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 32px; width: 0px; box-shadow: none; border: none;
@@ -176,177 +167,155 @@
             color: #7e22ce;
             border-color: #d8b4fe;
         }
-        .discount-btn.inactive:hover { background-color: #e9d5ff; }
         .status-indicator.bg-green-500 { background-color: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
         .status-indicator.bg-yellow-400 { background-color: #facc15; }
         .status-indicator.bg-red-500 { background-color: #ef4444; }
-        /* 모달 스타일 */
+        
         .modal-label { font-size: 11px; color: #6b7280; margin-bottom: 2px; }
         .modal-value { font-size: 14px; font-weight: bold; color: #1f2937; word-break: break-all; }
-        .modal-box { background: #f9fafb; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
-        /* [NEW] Liquid Swirl Animation in a Circle */
-        @keyframes liquid-swirl {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .siri-btn-container {
-            width: 56px;
-            height: 56px;
-            border-radius: 9999px; /* Perfect Circle */
-            position: relative;
-            overflow: hidden; /* This masks the inner liquid to a circle */
-            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
-            transform: translateZ(0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            background-color: #f3f4f6; /* Base background */
-        }
-        .siri-btn-container:active { transform: scale(0.95); }
-        .siri-btn-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 180%; /* Larger than container to rotate */
-            height: 180%;
-            /* All Purple Gradient Mesh */
-            background: radial-gradient(circle at 50% 50%, rgba(168,85,247,1) 20%, rgba(147,51,234,1) 50%, rgba(192,132,252,1) 80%);
-            background: conic-gradient(from 0deg, #a855f7, #d8b4fe, #9333ea, #c084fc, #a855f7);
-            
-            /* The Blob Shape */
-            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-            
-            /* Rotation creates the liquid effect inside the circle */
-            animation: liquid-swirl 6s linear infinite;
-            opacity: 0.9;
-        }
         
-        /* Fixed Icon Styling */
-        .qr-fixed-content {
+        /* Jelly Toggle Styles */
+        .toggle-container {
             position: relative;
-            z-index: 10;
-            color: white;
+            background-color: #f3f4f6;
+            border-radius: 12px;
+            padding: 4px;
             display: flex;
-            flex-direction: column;
+            height: 44px;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background-color: white;
+            border-radius: 9px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1;
+        }
+        .toggle-option {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
-            pointer-events: none;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 2;
+            transition: color 0.3s;
+            user-select: none;
         }
+        .toggle-option.active { color: #111827; }
+        .toggle-option.inactive { color: #9ca3af; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
 
-        /* [NEW] Scanner Overlay Circular Reveal Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-bounce-slow { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        
         #scannerOverlay {
-            /* Start state: invisible circle at specific point */
             --origin-x: 50%;
             --origin-y: 50%;
-            
-            /* Use clip-path for circular reveal */
             -webkit-clip-path: circle(0px at var(--origin-x) var(--origin-y));
             clip-path: circle(0px at var(--origin-x) var(--origin-y));
             opacity: 0;
-            
-            /* Smooth transitions */
             transition: -webkit-clip-path 1s cubic-bezier(0.22, 1, 0.36, 1), clip-path 1s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease, background-color 0.6s ease;
-            pointer-events: none; /* Prevent clicks when hidden */
-            background-color: rgba(147, 51, 234, 0.1); /* Start with light purple tint */
+            pointer-events: none;
+            background-color: rgba(147, 51, 234, 0.1);
         }
         #scannerOverlay.show {
-            /* End state: huge circle covering screen */
             -webkit-clip-path: circle(200vmax at var(--origin-x) var(--origin-y));
             clip-path: circle(200vmax at var(--origin-x) var(--origin-y));
             opacity: 1;
             pointer-events: auto;
-            background-color: rgba(147, 51, 234, 0.8); /* Darker purple for visibility */
+            background-color: rgba(147, 51, 234, 0.8);
         }
         #scannerOverlay.hide {
-            /* Exit state: shrink back to nothing */
             -webkit-clip-path: circle(0px at var(--origin-x) var(--origin-y));
             clip-path: circle(0px at var(--origin-x) var(--origin-y));
             opacity: 0;
-            /* Faster exit */
             transition: -webkit-clip-path 0.8s cubic-bezier(0.33, 1, 0.68, 1), clip-path 0.8s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s ease, background-color 0.5s ease;
-            background-color: rgba(147, 51, 234, 0.1); /* Fade back to light purple */
+            background-color: rgba(147, 51, 234, 0.1);
         }
         .scan-success { box-shadow: 0 0 20px #a855f7; transition: box-shadow 0.5s; }
+        
+        @keyframes liquid-swirl { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        .siri-btn-container { width: 56px; height: 56px; border-radius: 9999px; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); transform: translateZ(0); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease; background-color: #f3f4f6; }
+        .siri-btn-bg { position: absolute; top: 50%; left: 50%; width: 180%; height: 180%; background: conic-gradient(from 0deg, #a855f7, #d8b4fe, #9333ea, #c084fc, #a855f7); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: liquid-swirl 6s linear infinite; opacity: 0.9; }
+        .qr-fixed-content { position: relative; z-index: 10; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     </style>
 </head>
-<body class="max-w-md mx-auto bg-white shadow-2xl relative">
-    <!-- 상단 헤더 -->
-    <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10">
+<body class="max-w-md mx-auto bg-white shadow-2xl relative w-full">
+    <!-- Header -->
+    <header class="px-6 pt-8 pb-4 shrink-0 bg-white z-10 w-full">
         <div class="flex justify-between items-center mb-10">
             <div class="flex items-center -ml-6">
-                <img src="logo.png" alt="슈퍼트러스트(SuperTrust) SUT 코인 로고" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+                <img src="logo.png" alt="SUT Logo" class="h-16 w-auto object-contain z-10 -ml-2" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
                 <div id="fallback-logo" class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center hidden z-10 -ml-2">
                     <i data-lucide="zap" class="w-8 h-8 text-white fill-white"></i>
                 </div>
                 <span class="font-bold text-xl text-slate-900 z-0 -ml-4">trustre</span>
             </div>
-            
             <div class="flex items-center gap-2">
                 <div class="bg-purple-50 px-3 py-1.5 rounded-full flex items-center gap-1.5">
                     <div id="statusIndicator" class="w-2 h-2 bg-gray-300 rounded-full status-indicator"></div>
-                    <span class="text-xs font-bold text-purple-700 num-font flex items-center gap-1" id="topPriceDisplay">
-                        1 SUT = ...
-                    </span>
+                    <span class="text-xs font-bold text-purple-700 num-font flex items-center gap-1" id="topPriceDisplay">1 SUT = ...</span>
                 </div>
             </div>
         </div>
-        
         <h1 class="text-2xl font-bold text-[#191f28] leading-tight text-left pl-5">
             결제할 금액을<br>입력해 주세요
         </h1>
     </header>
-    <!-- 메인 컨텐츠 -->
-    <main class="flex-1 flex flex-col px-6 overflow-y-auto pb-32">
-        <!-- 입력창 영역 -->
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 flex flex-col px-6 overflow-y-auto pb-32 w-full">
+        <!-- Input Area -->
         <div class="mt-4 flex items-center justify-between w-full relative pl-5">
             <div class="flex items-center justify-start flex-1 relative -ml-[2px]">
                 <input type="tel" id="krwInput" class="amount-input num-font" placeholder="0" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
                 <span class="text-2xl font-bold text-[#333d4b] ml-1 pointer-events-none shrink-0">원</span>
             </div>
-            <!-- [수정] 원형 컨테이너 + 내부 물방울 모션 + 고정 텍스트 -->
-            <button id="qrButton" onclick="startQrScanner()" class="siri-btn-container ml-2 shrink-0" aria-label="QR 스캔">
-                <div class="siri-btn-bg"></div> <!-- Liquid Swirl Background -->
-                
-                <!-- Fixed Content: QR Text + Finders -->
+            <button id="qrButton" class="siri-btn-container ml-2 shrink-0" aria-label="QR 스캔">
+                <div class="siri-btn-bg"></div>
                 <div class="qr-fixed-content">
                     <div class="relative w-7 h-7 flex items-center justify-center">
                         <span class="font-black text-[10px] leading-none tracking-tighter drop-shadow-md">QR</span>
-                        <!-- Fixed Corners (Vector) -->
                         <svg class="absolute inset-0 w-full h-full text-white drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2 2H9V4H4V9H2V2Z" />
-                            <path d="M15 2H22V9H20V4H15V2Z" />
-                            <path d="M2 15H4V20H9V22H2V15Z" />
-                            <path d="M20 15H22V22H15V20H20V15Z" />
+                            <path d="M2 2H9V4H4V9H2V2Z" /> <path d="M15 2H22V9H20V4H15V2Z" /> <path d="M2 15H4V20H9V22H2V15Z" /> <path d="M20 15H22V22H15V20H20V15Z" />
                         </svg>
                     </div>
                 </div>
             </button>
         </div>
-        
         <div id="krwKorean" class="text-sm text-gray-400 font-medium text-left h-5 mb-2 shrink-0 w-full pl-5"></div>
-        <div class="bg-[#f2f4f6] rounded-2xl p-5 mt-2 transition-all duration-300 transform scale-95 opacity-50 shrink-0 mb-8" id="resultCard">
+        
+        <!-- Result Card -->
+        <div class="bg-[#f2f4f6] rounded-2xl p-5 mt-2 transition-all duration-300 transform scale-95 opacity-50 shrink-0 mb-3" id="resultCard">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-sm text-[#4e5968] font-medium">보내야 할 코인</span>
-                <button onclick="fetchSutData()" class="text-xs text-[#8b95a1] flex items-center gap-1 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 active:bg-gray-50 hover:bg-gray-50 transition-colors">
-                    <i data-lucide="refresh-cw" class="w-3 h-3" id="refreshIcon"></i>
-                    <span id="refreshText">업데이트</span>
+                <button class="text-xs text-[#8b95a1] flex items-center gap-1 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 active:bg-gray-50 hover:bg-gray-50 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-3 h-3" id="refreshIcon"></i><span id="refreshText">업데이트</span>
                 </button>
             </div>
             <div class="flex items-baseline gap-1 mb-1">
                 <span id="sutAmount" class="text-3xl font-bold text-purple-600 num-font">0</span>
                 <span class="text-lg font-bold text-purple-600">SUT</span>
-                <button onclick="toggleInfo()" class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 ml-1 translate-y-0.5" aria-label="도움말 보기">
+                <button class="text-[#8b95a1] hover:text-purple-600 transition-colors p-1 ml-1 translate-y-0.5" aria-label="도움말 보기">
                     <i data-lucide="help-circle" class="w-4 h-4"></i>
                 </button>
             </div>
-            
             <div id="infoText" class="hidden text-[11px] text-gray-500 mt-2 bg-white p-3 rounded-xl border border-gray-100 shadow-sm leading-relaxed break-keep">
                 편의성을 위해 소수점을 생략했어요. 자산에 미치는 영향은 거의 없으니 안심해도 좋아요.
             </div>
-            <!-- 할인율 선택 UI -->
+            <!-- Discount Slider -->
             <div class="mt-5 mb-5 bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-stretch gap-4 h-[160px]">
                 <div class="flex flex-col justify-between flex-1">
                     <div class="flex flex-col items-start">
@@ -355,207 +324,323 @@
                             <span id="discountDisplay" class="text-3xl font-black text-purple-600 leading-none">10%</span>
                         </div>
                     </div>
-                    
                     <div class="flex flex-col gap-2 mt-2">
-                        <button id="btn20" onclick="setDiscount(20)" class="discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">20%</button>
-                        <button id="btn10" onclick="setDiscount(10)" class="discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">10%</button>
+                        <button id="btn20" class="discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">20%</button>
+                        <button id="btn10" class="discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm">10%</button>
                     </div>
                 </div>
                 <div class="vertical-slider-container">
-                    <input type="range" id="discountSlider" min="0" max="50" step="10" value="10"
-                           oninput="updateDiscountFromSlider(this.value)">
+                    <input type="range" id="discountSlider" min="0" max="50" step="10" value="10">
                     <div class="absolute bottom-3 w-full text-center text-[10px] font-bold text-gray-400 pointer-events-none">0</div>
                     <div class="absolute top-3 w-full text-center text-[10px] font-bold text-white pointer-events-none mix-blend-overlay">50</div>
                 </div>
             </div>
-            <!-- Buttons inside card -->
-            <div class="flex gap-3 mt-6">
-                <button id="copyBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="copyResult()">
-                    수량 복사
-                </button>
-                <button id="walletBtn" class="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2" disabled onclick="handleSendTransfer()">
-                    <i data-lucide="send" class="w-5 h-5"></i> 송금하기
-                </button>
+            <!-- Main Actions -->
+            <div class="flex gap-3 mt-4">
+                <button id="copyBtn" class="flex-1 bg-white text-slate-600 font-bold text-base py-3 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 border border-gray-200 shadow-sm" disabled>수량 복사</button>
+                <button id="walletBtn" class="flex-[1.4] bg-purple-600 text-white font-bold text-base py-3 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md hover:bg-purple-700 shadow-purple-200" disabled><i data-lucide="send" class="w-5 h-5"></i> 송금하기</button>
             </div>
-            
-            <!-- 사용처 보기 버튼 -->
-            <a href="https://naver.me/FeNWPtbK" target="_blank" class="w-full mt-3 bg-white border border-gray-200 text-gray-500 font-bold text-sm py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition-all">
-                <i data-lucide="map-pin" class="w-4 h-4"></i>
-                SUT 사용처 보기
+        </div>
+
+        <!-- Links -->
+        <div class="grid grid-cols-2 gap-3 mb-2">
+            <a href="https://naver.me/FeNWPtbK" target="_blank" class="relative bg-white border border-gray-100 rounded-2xl h-20 shadow-sm hover:border-purple-200 hover:shadow-md active:scale-[0.98] transition-all overflow-hidden group">
+                <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-purple-100/60 to-transparent opacity-100 pointer-events-none"></div>
+                <div class="absolute top-1/2 -translate-y-1/2 left-4 z-10">
+                    <span class="block text-base font-bold text-gray-700 leading-tight group-hover:text-purple-600 transition-colors">SUT<br>사용처 확인</span>
+                </div>
+                <div class="absolute -bottom-3 -right-3 transform rotate-[-15deg] group-hover:scale-110 group-hover:rotate-[-5deg] group-hover:-translate-y-1 transition-all duration-500 ease-out z-10">
+                    <svg width="70" height="70" viewBox="0 0 100 100" fill="none"><ellipse cx="50" cy="90" rx="20" ry="6" fill="#000" fill-opacity="0.1" filter="url(#blur)"/><path d="M50 88C50 88 78 58 78 40C78 24.536 65.464 12 50 12C34.536 12 22 24.536 22 40C22 58 50 88 50 88Z" fill="url(#softPinGradient)"/><ellipse cx="38" cy="32" rx="8" ry="12" fill="white" fill-opacity="0.25" transform="rotate(-30 38 32)"/><circle cx="50" cy="40" r="14" fill="#F3E8FF"/><circle cx="50" cy="40" r="14" fill="url(#innerShadow)" fill-opacity="0.5"/><defs><filter id="blur" x="20" y="80" width="60" height="20" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="3"/></filter><radialGradient id="softPinGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(40 30) rotate(55) scale(65)"><stop stop-color="#E9D5FF"/><stop offset="0.6" stop-color="#C084FC"/><stop offset="1" stop-color="#9333EA"/></radialGradient><radialGradient id="innerShadow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 40) scale(14)"><stop offset="0.7" stop-color="#A855F7" stop-opacity="0"/><stop offset="1" stop-color="#7E22CE" stop-opacity="0.3"/></radialGradient></defs></svg>
+                </div>
+            </a>
+            <a href="https://www.instagram.com/trust_retail/" target="_blank" class="relative bg-white border border-gray-100 rounded-2xl h-20 shadow-sm hover:border-pink-200 hover:shadow-md active:scale-[0.98] transition-all overflow-hidden group">
+                <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-pink-100/60 to-transparent opacity-100 pointer-events-none"></div>
+                <div class="absolute top-1/2 -translate-y-1/2 left-4 z-10">
+                    <span class="block text-base font-bold text-gray-700 group-hover:text-pink-500 transition-colors">인스타그램</span>
+                </div>
+                <div class="absolute -bottom-2 -right-2 transform rotate-[15deg] group-hover:scale-110 group-hover:rotate-[5deg] group-hover:-translate-y-1 transition-all duration-500 ease-out z-10">
+                    <svg width="65" height="65" viewBox="0 0 100 100" fill="none"><rect x="15" y="85" width="70" height="10" rx="5" fill="#000" fill-opacity="0.1" filter="url(#blurInsta)"/><rect x="10" y="14" width="80" height="80" rx="22" fill="#Eecbeb"/><rect x="10" y="10" width="80" height="80" rx="22" fill="url(#softInstaGradient)"/><rect x="11.5" y="11.5" width="77" height="77" rx="20.5" stroke="white" stroke-opacity="0.4" stroke-width="3"/><rect x="25" y="25" width="50" height="50" rx="15" stroke="white" stroke-width="6" stroke-opacity="0.9"/><circle cx="50" cy="50" r="14" stroke="white" stroke-width="6" stroke-opacity="0.9"/><circle cx="74" cy="26" r="4.5" fill="white" fill-opacity="0.9"/><path d="M10 30Q30 10 50 10L90 10L90 50Q70 30 10 30Z" fill="white" fill-opacity="0.1" style="mix-blend-mode: overlay;"/><defs><filter id="blurInsta" x="5" y="75" width="90" height="30" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="4"/></filter><linearGradient id="softInstaGradient" x1="10" y1="90" x2="90" y2="10" gradientUnits="userSpaceOnUse"><stop stop-color="#FCD34D"/><stop offset="0.5" stop-color="#F472B6"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs></svg>
+                </div>
             </a>
         </div>
-        <!-- AI & Chart -->
-        <div class="border-t border-gray-100 pt-8 pb-4">
-            <div class="bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-2xl p-5 mb-6 shadow-sm relative overflow-hidden">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="glass-badge text-[11px]">AI</span>
-                    <span class="text-xs text-gray-400 font-medium">실시간 분석</span>
-                    <span class="text-[10px] text-gray-300 ml-auto" id="newsSource"></span>
+
+        <!-- Menu Section -->
+        <div class="border-t border-gray-100 pt-4 pb-4">
+            <div class="flex flex-col gap-2 mb-6">
+                <!-- Chart Toggle -->
+                <button group="chart" class="w-full bg-white border border-gray-100 rounded-2xl py-3 px-4 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all hover:border-purple-200 group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 flex items-center justify-center filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <svg viewBox="0 0 36 36" fill="none" class="w-full h-full"><path d="M4 28V16C4 14.8954 4.89543 14 6 14H10C11.1046 14 12 14.8954 12 16V28C12 29.1046 11.1046 30 10 30H6C4.89543 30 4 29.1046 4 28Z" fill="url(#bar1)"/><path d="M14 28V10C14 8.89543 14.8954 8 16 8H20C21.1046 8 22 8.89543 22 10V28C22 29.1046 21.1046 30 20 30H16C14.8954 30 14 29.1046 14 28Z" fill="url(#bar2)"/><path d="M24 28V4C24 2.89543 24.8954 2 26 2H30C31.1046 2 32 2.89543 32 4V28C32 29.1046 31.1046 30 30 30H26C24.8954 30 24 29.1046 24 28Z" fill="url(#bar3)"/><defs><linearGradient id="bar1" x1="8" y1="14" x2="8" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#E9D5FF"/><stop offset="1" stop-color="#C084FC"/></linearGradient><linearGradient id="bar2" x1="18" y1="8" x2="18" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#D8B4FE"/><stop offset="1" stop-color="#A855F7"/></linearGradient><linearGradient id="bar3" x1="28" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#C084FC"/><stop offset="1" stop-color="#7E22CE"/></linearGradient></defs></svg>
+                        </div>
+                        <span class="text-base font-bold text-gray-700">SUT 차트 보기</span>
+                    </div>
+                    <i data-lucide="chevron-down" id="chartToggleIcon" class="w-5 h-5 text-gray-400 transition-transform duration-300"></i>
+                </button>
+                <div id="chartContent" class="hidden overflow-hidden transition-all duration-300 ease-in-out">
+                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 mt-2">
+                        <div class="mb-2 px-1 flex justify-between items-end">
+                            <div><h3 class="font-bold text-slate-800 text-lg mb-1">SUT/KRW</h3><p class="text-xs text-gray-400">최근 24시간 흐름</p></div>
+                            <div id="lastUpdatedTime" class="text-[10px] text-gray-400 bg-white px-2 py-1 rounded-md border border-gray-200">업데이트 중...</div>
+                        </div>
+                        <div class="w-full h-56 bg-white rounded-xl overflow-hidden relative border border-gray-200 shadow-inner">
+                            <div id="tvChartContainer" class="w-full h-full"></div>
+                            <div id="chartLoader" class="absolute inset-0 flex items-center justify-center bg-white z-10"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div></div>
+                            <div id="chartError" class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400 text-xs hidden">차트 데이터를 불러올 수 없어요</div>
+                        </div>
+                    </div>
                 </div>
-                <p id="aiDiagnosisText" class="text-slate-800 font-bold text-lg leading-snug break-keep">데이터 확인 중...</p>
-            </div>
-            <div class="mb-2 px-1 flex justify-between items-end">
-                <div>
-                    <h3 class="font-bold text-slate-800 text-lg mb-1">SUT 차트</h3>
-                    <p class="text-xs text-gray-400">최근 24시간 흐름</p>
-                </div>
-                <div id="lastUpdatedTime" class="text-[10px] text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
-                    업데이트 중...
-                </div>
-            </div>
-            <div class="w-full h-56 bg-white rounded-2xl overflow-hidden relative border border-gray-100 shadow-sm">
-                <div id="tvChartContainer" class="w-full h-full"></div>
-                <div id="chartLoader" class="absolute inset-0 flex items-center justify-center bg-white z-10">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                </div>
-                <div id="chartError" class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400 text-xs hidden">
-                    차트 데이터를 불러올 수 없어요
-                </div>
-            </div>
-            
-            <div class="mt-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div class="flex gap-2 items-start">
-                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5"></i>
-                    <p class="text-[11px] text-gray-400 leading-relaxed break-keep">
-                        위 차트와 AI 분석은 단순 참고용이에요. 절대 투자의 근거로 활용하지 마세요. 모든 투자 결정에 대한 책임은 본인에게 있습니다.
-                    </p>
-                </div>
+                
+                <!-- Fortune Button -->
+                <button group="fortune" class="w-full bg-white border border-gray-100 rounded-2xl py-3 px-4 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all hover:border-yellow-200 group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 flex items-center justify-center filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <svg viewBox="0 0 36 36" fill="none" class="w-full h-full"><path d="M18 18C18 18 14 10 10 10C6 10 4 14 4 18C4 22 10 22 18 18Z" fill="url(#leaf1)"/><path d="M18 18C18 18 26 10 30 10C34 10 36 14 36 18C36 22 30 22 18 18Z" fill="url(#leaf2)"/><path d="M18 18C18 18 10 26 10 30C10 34 14 36 18 36C22 36 22 30 18 18Z" fill="url(#leaf3)"/><path d="M18 18C18 18 26 26 30 30C34 30 36 26 36 22C36 18 30 18 18 18Z" fill="url(#leaf4)"/><path d="M18 18C18 18 10 10 6 6C2 2 2 8 18 18Z" fill="url(#leaf1)" fill-opacity="0.5"/><circle cx="18" cy="18" r="2" fill="#FEF08A"/><defs><linearGradient id="leaf1" x1="18" y1="18" x2="4" y2="10" gradientUnits="userSpaceOnUse"><stop stop-color="#4ADE80"/><stop offset="1" stop-color="#22C55E"/></linearGradient><linearGradient id="leaf2" x1="18" y1="18" x2="36" y2="10" gradientUnits="userSpaceOnUse"><stop stop-color="#86EFAC"/><stop offset="1" stop-color="#4ADE80"/></linearGradient><linearGradient id="leaf3" x1="18" y1="18" x2="10" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#BBF7D0"/><stop offset="1" stop-color="#86EFAC"/></linearGradient><linearGradient id="leaf4" x1="18" y1="18" x2="36" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#4ADE80"/><stop offset="1" stop-color="#16A34A"/></linearGradient></defs></svg>
+                        </div>
+                        <span class="text-base font-bold text-gray-700">오늘의 운세</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                </button>
             </div>
         </div>
     </main>
-    <!-- 모달들 -->
-    <!-- [Modified] 전체 화면 카메라 오버레이 구조 변경 -->
-    <div id="scannerOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black">
-        <!-- 카메라 영역 (전체 화면) -->
-        <div id="qr-reader" class="absolute inset-0 w-full h-full z-0"></div>
-        
-        <!-- UI 오버레이 (가운데 정렬) -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-            <div class="scan-frame-container" id="scanFrame">
-                <!-- 어둡게 만드는 마스크 -->
-                <div class="scan-mask"></div>
-                
-                <div class="laser-line"></div>
-                <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
-                <div class="scan-corner bl"></div><div class="scan-corner br"></div>
+
+    <!-- Fortune Modal (Enhanced) -->
+    <div id="fortuneModal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-sm text-center shadow-2xl transform transition-all scale-100 relative overflow-hidden flex flex-col max-h-[85vh]">
+            <!-- Modal Header -->
+            <div class="pt-8 px-6 pb-2 shrink-0">
+                <h3 class="text-xl font-bold text-gray-900">오늘의 운세</h3>
+                <p class="text-xs text-gray-400 mt-1">정보를 입력하면 더 정확한 운세를 볼 수 있어요</p>
             </div>
-            <p class="text-white/90 text-sm mt-8 font-medium animate-pulse text-center drop-shadow-md z-20">QR코드를 사각형 안에 비춰주세요</p>
-        </div>
-        
-        <!-- 닫기 버튼 (하단 고정) -->
-        <button onclick="stopQrScanner()" class="absolute bottom-12 px-6 py-3 bg-white/20 text-white rounded-full text-sm font-bold backdrop-blur-md border border-white/10 hover:bg-white/30 transition-all pointer-events-auto z-20 shadow-lg">닫기</button>
-    </div>
-    
-    <!-- QR Scan Result Modal -->
-    <div id="scanResultModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check" class="w-6 h-6 text-green-600"></i></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">스캔 성공!</h3>
-            
-            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
-                <div class="mb-2">
-                    <p class="modal-label">지갑 주소</p>
-                    <p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p>
-                </div>
-                <div id="scanAmountDetails" class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-200 pt-2 hidden">
+
+            <!-- Modal Body -->
+            <div class="px-6 py-2 overflow-y-auto flex-1 custom-scrollbar">
+                <!-- Input Step -->
+                <div id="fortuneInputStep" class="space-y-4 text-left">
+                    <!-- 생년월일 -->
                     <div>
-                        <p class="modal-label">보낼 수량</p>
-                        <p class="modal-value text-purple-600" id="scanModalSut">0 SUT</p>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 ml-1">생년월일</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <select id="selYear" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-3 text-sm font-medium text-gray-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all text-center"></select>
+                            <select id="selMonth" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-3 text-sm font-medium text-gray-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all text-center"></select>
+                            <select id="selDay" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-3 text-sm font-medium text-gray-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all text-center"></select>
+                        </div>
                     </div>
-                    <div>
-                        <p class="modal-label">환산 금액</p>
-                        <p class="modal-value text-gray-800" id="scanModalKrw">0원</p>
+
+                    <!-- Jelly Toggles -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 ml-1">양력/음력</label>
+                            <div class="toggle-container" onclick="toggleCalendar()">
+                                <div id="calSlider" class="toggle-slider"></div>
+                                <div class="toggle-option active" id="optSolar">양력</div>
+                                <div class="toggle-option inactive" id="optLunar">음력</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 ml-1">성별</label>
+                            <div class="toggle-container" onclick="toggleGender()">
+                                <div id="genSlider" class="toggle-slider"></div>
+                                <div class="toggle-option active" id="optMale">남성</div>
+                                <div class="toggle-option inactive" id="optFemale">여성</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="space-y-2">
-                <button onclick="copyAndOpenWallet()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">주소 복사하고 지갑 열기</button>
-                <button onclick="closeResultModal()" class="w-full text-gray-400 text-sm py-2">닫기</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Send Modal -->
-    <div id="sendModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="send" class="w-6 h-6 text-blue-600"></i></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">송금 준비</h3>
-            <p class="text-sm text-gray-500 mb-4">갯수를 복사했어요. 앱을 켤게요.</p>
-            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
-                <div class="grid grid-cols-2 gap-2">
+
+                    <!-- 태어난 시간 -->
                     <div>
-                        <p class="modal-label">보낼 수량</p>
-                        <p class="modal-value text-purple-600" id="sendModalSut">0 SUT</p>
-                    </div>
-                    <div>
-                        <p class="modal-label">환산 금액</p>
-                        <p class="modal-value text-gray-800" id="sendModalKrw">0원</p>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 ml-1">태어난 시간 <span class="text-gray-300 font-normal">(선택)</span></label>
+                        <select id="birthTime" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all appearance-none">
+                            <option value="">시간 모름</option>
+                            <option value="0">자시 (23:30 ~ 01:29)</option>
+                            <option value="1">축시 (01:30 ~ 03:29)</option>
+                            <option value="2">인시 (03:30 ~ 05:29)</option>
+                            <option value="3">묘시 (05:30 ~ 07:29)</option>
+                            <option value="4">진시 (07:30 ~ 09:29)</option>
+                            <option value="5">사시 (09:30 ~ 11:29)</option>
+                            <option value="6">오시 (11:30 ~ 13:29)</option>
+                            <option value="7">미시 (13:30 ~ 15:29)</option>
+                            <option value="8">신시 (15:30 ~ 17:29)</option>
+                            <option value="9">유시 (17:30 ~ 19:29)</option>
+                            <option value="10">술시 (19:30 ~ 21:29)</option>
+                            <option value="11">해시 (21:30 ~ 23:29)</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-            
-            <button onclick="directOpenWallet()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">지금 지갑 열기</button>
-            <button onclick="document.getElementById('sendModal').classList.add('hidden')" class="w-full text-gray-400 text-sm py-2 mt-1">닫기</button>
-        </div>
-    </div>
-    <div id="manualOpenModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">앱 실행 오류</h3>
-            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">자동으로 앱을 열 수 없어요.<br><span class="font-bold text-purple-600">지갑 주소는 복사되었으니</span><br>앱을 직접 실행해주세요.</p>
-            <button onclick="closeManualModal()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">확인</button>
-        </div>
-    </div>
-    
-    <div id="storeRedirectModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="download" class="w-6 h-6 text-purple-600"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">스토어로 이동할까요?</h3>
-            <p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">오류로 앱을 실행하지 못해<br>스토어로 이동할게요.<br><span class="text-xs text-purple-500 mt-1 block">* 결제 수량(SUT)은 복사되었어요.</span></p>
-            <button onclick="goToStore()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">스토어로 이동</button>
-            <button onclick="closeStoreModal()" class="w-full text-gray-400 text-sm mt-2">닫기</button>
-        </div>
-    </div>
-    <!-- [NEW] Previous Record Modal -->
-    <div id="previousRecordModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="history" class="w-6 h-6 text-purple-600"></i></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">이전 기록 상세</h3>
-            
-            <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
-                <div class="mb-2">
-                    <p class="modal-label">환산 금액</p>
-                    <p class="modal-value text-gray-800" id="prevModalKrw">0원</p>
+
+                <!-- Result Step (Toss UI Style) -->
+                <div id="fortuneResultStep" class="hidden text-left animate-fadeIn pb-4">
+                    <!-- Dynamic Theme Background -->
+                    <div id="fortuneThemeBg" class="p-6 rounded-[24px] shadow-sm relative overflow-hidden transition-colors duration-500 mb-6 text-center">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+                        <div class="text-6xl mb-3 animate-bounce-slow"><span id="fortuneMainEmoji">🍀</span></div>
+                        <h4 class="text-xl font-extrabold text-gray-800 mb-2 leading-tight tracking-tight" id="fortuneMainTitle">...</h4>
+                        <p class="text-sm font-medium text-gray-600 leading-relaxed break-keep opacity-80" id="fortuneMainDesc">...</p>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="space-y-4 px-1">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 text-xl shadow-sm">❤️</div>
+                            <div class="flex-1 pt-0.5">
+                                <div class="flex justify-between items-center mb-1.5"><span class="text-base font-bold text-gray-800">애정운</span><span class="text-sm font-bold" id="scoreLove">--</span></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5"><div id="barLove" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div></div>
+                                <p class="text-xs text-gray-500 font-medium leading-normal break-keep" id="descLove">...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 text-xl shadow-sm">💰</div>
+                            <div class="flex-1 pt-0.5">
+                                <div class="flex justify-between items-center mb-1.5"><span class="text-base font-bold text-gray-800">금전운</span><span class="text-sm font-bold" id="scoreMoney">--</span></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5"><div id="barMoney" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div></div>
+                                <p class="text-xs text-gray-500 font-medium leading-normal break-keep" id="descMoney">...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 text-xl shadow-sm">💼</div>
+                            <div class="flex-1 pt-0.5">
+                                <div class="flex justify-between items-center mb-1.5"><span class="text-base font-bold text-gray-800">직장/사업</span><span class="text-sm font-bold" id="scoreWork">--</span></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5"><div id="barWork" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div></div>
+                                <p class="text-xs text-gray-500 font-medium leading-normal break-keep" id="descWork">...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 text-xl shadow-sm">🎓</div>
+                            <div class="flex-1 pt-0.5">
+                                <div class="flex justify-between items-center mb-1.5"><span class="text-base font-bold text-gray-800">학업/성적</span><span class="text-sm font-bold" id="scoreStudy">--</span></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5"><div id="barStudy" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div></div>
+                                <p class="text-xs text-gray-500 font-medium leading-normal break-keep" id="descStudy">...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 text-xl shadow-sm">💪</div>
+                            <div class="flex-1 pt-0.5">
+                                <div class="flex justify-between items-center mb-1.5"><span class="text-base font-bold text-gray-800">건강운</span><span class="text-sm font-bold" id="scoreHealth">--</span></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5"><div id="barHealth" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div></div>
+                                <p class="text-xs text-gray-500 font-medium leading-normal break-keep" id="descHealth">...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="prevAddressDetails" class="mb-2 hidden">
-                    <p class="modal-label">지갑 주소</p>
-                    <p class="modal-value text-xs break-all text-gray-500" id="prevModalAddress">...</p>
-                    <button onclick="copyPrevAddress()" class="w-full bg-gray-500 text-white font-bold py-2 rounded-xl mt-2 active:scale-95 transition-all">주소 복사</button>
-                </div>
             </div>
-            <button onclick="closePreviousModal()" class="w-full text-gray-400 text-sm py-2">닫기</button>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-3 shrink-0">
+                <button id="btnCheckFortune" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span>운세 확인하기</span>
+                    <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
+                </button>
+                <button id="btnResetFortune" class="w-full bg-white border border-gray-200 text-gray-600 font-bold py-3.5 rounded-xl mt-2 active:scale-95 transition-all hidden">
+                    다른 정보로 다시 보기
+                </button>
+                <button class="w-full text-gray-400 text-xs font-medium py-3 mt-1" onclick="closeFortuneModal()">닫기</button>
+            </div>
         </div>
     </div>
+
+    <!-- ... (Other Modals) ... -->
+    <div id="scannerOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black"><div id="qr-reader" class="absolute inset-0 w-full h-full z-0"></div><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10"><div class="scan-frame-container" id="scanFrame"><div class="scan-mask"></div> <div class="laser-line"></div> <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div></div><p class="text-white/90 text-sm mt-8 font-medium animate-pulse text-center drop-shadow-md z-20">QR코드를 사각형 안에 비춰주세요</p></div><button class="absolute bottom-12 px-6 py-3 bg-white/20 text-white rounded-full text-sm font-bold backdrop-blur-md border border-white/10 hover:bg-white/30 transition-all pointer-events-auto z-20 shadow-lg">닫기</button></div>
+    <div id="scanResultModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100"><div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check" class="w-6 h-6 text-green-600"></i></div><h3 class="text-xl font-bold text-gray-900 mb-2">스캔 성공!</h3><div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4"><div class="mb-2"><p class="modal-label">지갑 주소</p><p class="modal-value text-xs break-all text-gray-500" id="scanModalAddress">...</p></div><div id="scanAmountDetails" class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-200 pt-2 hidden"><div><p class="modal-label">보낼 수량</p><p class="modal-value text-purple-600" id="scanModalSut">0 SUT</p></div><div><p class="modal-label">환산 금액</p><p class="modal-value text-gray-800" id="scanModalKrw">0원</p></div></div></div><div class="space-y-2"><button class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">주소 복사하고 지갑 열기</button><button class="w-full text-gray-400 text-sm py-2">닫기</button></div></div></div>
+    <div id="sendModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="send" class="w-6 h-6 text-blue-600"></i></div><h3 class="text-xl font-bold text-gray-900 mb-2">송금 준비</h3><p class="text-sm text-gray-500 mb-4">갯수를 복사했어요. 앱을 켤게요.</p><div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4"><div class="grid grid-cols-2 gap-2"><div><p class="modal-label">보낼 수량</p><p class="modal-value text-purple-600" id="sendModalSut">0 SUT</p></div><div><p class="modal-label">환산 금액</p><p class="modal-value text-gray-800" id="sendModalKrw">0원</p></div></div></div><button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">지금 지갑 열기</button><button class="w-full text-gray-400 text-sm py-2 mt-1">닫기</button></div></div>
+    <div id="manualOpenModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100"><div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i></div><h3 class="text-lg font-bold text-gray-900 mb-2">앱 실행 오류</h3><p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">자동으로 앱을 열 수 없어요.<br><span class="font-bold text-purple-600">지갑 주소는 복사되었으니</span><br>앱을 직접 실행해주세요.</p><button class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">확인</button></div></div>
+    <div id="storeRedirectModal" class="fixed inset-0 bg-black/60 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100"><div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="download" class="w-6 h-6 text-purple-600"></i></div><h3 class="text-lg font-bold text-gray-900 mb-2">스토어로 이동할까요?</h3><p class="text-sm text-gray-500 mb-4 leading-relaxed text-left break-keep">오류로 앱을 실행하지 못해<br>스토어로 이동할게요.<br><span class="text-xs text-purple-500 mt-1 block">* 결제 수량(SUT)은 복사되었어요.</span></p><button class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">스토어로 이동</button><button class="w-full text-gray-400 text-sm mt-2">닫기</button></div></div>
+    <div id="previousRecordModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl transform transition-all scale-100"><div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="history" class="w-6 h-6 text-purple-600"></i></div><h3 class="text-xl font-bold text-gray-900 mb-2">이전 기록 상세</h3><div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4"><div class="mb-2"><p class="modal-label">환산 금액</p><p class="modal-value text-gray-800" id="prevModalKrw">0원</p></div><div id="prevAddressDetails" class="mb-2 hidden"><p class="modal-label">지갑 주소</p><p class="modal-value text-xs break-all text-gray-500" id="prevModalAddress">...</p><button class="w-full bg-gray-500 text-white font-bold py-2 rounded-xl mt-2 active:scale-95 transition-all">주소 복사</button></div></div><button class="w-full text-gray-400 text-sm py-2">닫기</button></div></div>
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-[rgba(51,61,75,0.9)] text-white px-5 py-3 rounded-full text-sm font-medium opacity-0 transition-opacity duration-300 pointer-events-none z-[90]">복사되었어요</div>
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        // 전역 변수
-        let currentSutPrice = 0;
-        let inputAmount = '';
-        let isPriceLoaded = false;
-        let discountRate = 10;
-        let html5QrCode;
-        let scannedAddress = '';
-        let isScannerRunning = false;
-        let isProcessingScan = false;
-        let chartInstance = null;
-        let pastSeries = null;
-        let todaySeries = null;
-        let latestNewsItem = null;
-        let priceGrade = 'D';
-        let fetchRetryCount = 0;
-        // UI 객체 선언 (초기화는 initUI에서)
+        // Global Vars
+        let currentSutPrice = 0; let inputAmount = ''; let discountRate = 10;
+        let html5QrCode; let scannedAddress = ''; let isProcessingScan = false;
+        let chartInstance = null; let pastSeries = null; let todaySeries = null;
+        let selectedCalendar = 'solar'; let selectedGender = 'male';
         let ui = {};
+
+        // [Fixed] FortuneEngine - Completed with biorhythm math, relations, text gen
+        const FortuneEngine = {
+            // Elements
+            elements: {
+                wood: { name: '목(木)' }, fire: { name: '화(火)' }, earth: { name: '토(土)' }, metal: { name: '금(金)' }, water: { name: '수(水)' }
+            },
+            // Zodiac to element
+            zodiacMap: {
+                0: 'metal', 1: 'metal', 2: 'water', 3: 'water', 4: 'wood', 5: 'wood', 6: 'fire', 7: 'fire', 8: 'earth', 9: 'earth', 10: 'metal', 11: 'water'
+            },
+            // Text templates
+            texts: {
+                love: {
+                    high: ["로맨틱한 만남이 기다릴 수 있어요. 적극적으로 표현하세요.", "파트너와의 관계가 깊어지는 날입니다."],
+                    mid: ["안정적인 애정운입니다. 작은 선물이 분위기를 좋게 합니다.", "싱글이라면 지인 소개를 기대해보세요."],
+                    low: ["감정 컨트롤이 중요합니다. 작은 오해가 생길 수 있어요.", "혼자만의 시간을 가져보세요."],
+                    destructive: "관계에서 마찰이 생길 수 있으니 자존심 대결은 피하세요."
+                },
+                money: {
+                    high: ["뜻밖의 이익이 따를 수 있습니다. 정보에 귀 기울이세요.", "금전적인 흐름이 원활합니다. 작은 투자도 고려해볼 만합니다."],
+                    mid: ["수입과 지출이 균형을 이룹니다. 계획적인 소비가 좋습니다.", "큰 변동은 없지만 안정적인 하루입니다."],
+                    low: ["충동구매를 조심해야 합니다. 지갑을 닫는 것이 현명합니다.", "예상치 못한 지출이 생길 수 있으니 비상금을 아끼세요."],
+                    destructive: "금전 거래나 계약은 다음으로 미루는 것이 안전합니다."
+                },
+                work: {
+                    high: ["머리 회전이 빠르고 아이디어가 샘솟는 날입니다.", "업무 효율이 최고조입니다. 미뤄둔 일을 처리하세요."],
+                    mid: ["꾸준함이 답입니다. 평소대로 임하면 성과가 있습니다.", "동료와의 협력이 좋은 결과를 가져옵니다."],
+                    low: ["집중력이 다소 떨어질 수 있습니다. 중요한 결정은 신중히.", "실수가 잦을 수 있으니 두 번 체크하는 습관을 가지세요."],
+                    generative: "귀인의 도움으로 어려운 문제가 해결될 수 있습니다."
+                },
+                health: {
+                    high: ["에너지가 넘칩니다. 운동이나 활동적인 취미를 즐겨보세요.", "컨디션이 최상입니다. 무엇이든 할 수 있을 것 같습니다."],
+                    mid: ["적당한 활동이 활력을 줍니다. 가벼운 산책을 추천합니다.", "평범한 컨디션입니다. 규칙적인 식사를 챙기세요."],
+                    low: ["피로가 쉽게 쌓일 수 있습니다. 충분한 휴식이 필요합니다.", "면역력이 약해질 수 있으니 따뜻한 물을 자주 드세요."]
+                }
+            },
+            // Calculation - Biorhythm + Element
+            calculate: function(birthDate, today) {
+                const daysAlive = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+                const bio = {
+                    physical: Math.sin(2 * Math.PI * daysAlive / 23) * 50 + 50, // 23-day cycle
+                    emotional: Math.sin(2 * Math.PI * daysAlive / 28) * 50 + 50, // 28-day
+                    intellectual: Math.sin(2 * Math.PI * daysAlive / 33) * 50 + 50 // 33-day
+                };
+                // Zodiac element
+                const birthYear = birthDate.getFullYear();
+                const zodiacIndex = birthYear % 12;
+                const myElement = this.zodiacMap[zodiacIndex];
+                // Day element (simplified)
+                const dayStem = daysAlive % 10;
+                const dayElement = ['wood', 'wood', 'fire', 'fire', 'earth', 'earth', 'metal', 'metal', 'water', 'water'][dayStem];
+                // Relation
+                const order = ['wood', 'fire', 'earth', 'metal', 'water'];
+                const myIdx = order.indexOf(myElement);
+                const dayIdx = order.indexOf(dayElement);
+                let relation;
+                if (myIdx === dayIdx) relation = 'same';
+                else if ((myIdx + 1) % 5 === dayIdx) relation = 'generative';
+                else if ((myIdx + 2) % 5 === dayIdx) relation = 'destructive';
+                else relation = 'exhausting';
+                // Scores (0-10)
+                return {
+                    love: Math.round(bio.emotional / 10),
+                    money: Math.round((bio.physical + bio.emotional) / 20),
+                    work: Math.round(bio.intellectual / 10),
+                    study: Math.round(bio.intellectual / 10), // Same as work for simplicity
+                    health: Math.round(bio.physical / 10),
+                    relation: relation,
+                    dayElement: this.elements[dayElement].name
+                };
+            },
+            // Get text
+            getText: function(type, score, relation, dayOfWeek) {
+                const level = score >= 9 ? 'high' : score >= 7 ? 'mid' : 'low';
+                const texts = this.texts[type][level];
+                let text = texts[Math.floor(Math.random() * texts.length)];
+                if (this.texts[type][relation]) text += " " + this.texts[type][relation];
+                if (dayOfWeek === 0) text += " 주말이니 여유롭게 즐기세요.";
+                return text;
+            }
+        };
+
+        // Init UI
         function initUI() {
             ui = {
                 krwInput: document.getElementById('krwInput'),
@@ -568,153 +653,280 @@
                 statusIndicator: document.getElementById('statusIndicator'),
                 refreshIcon: document.getElementById('refreshIcon'),
                 refreshText: document.getElementById('refreshText'),
-                aiText: document.getElementById('aiDiagnosisText'),
                 chartLoader: document.getElementById('chartLoader'),
                 chartError: document.getElementById('chartError'),
                 lastUpdatedTime: document.getElementById('lastUpdatedTime'),
-                newsSource: document.getElementById('newsSource'),
                 discountDisplay: document.getElementById('discountDisplay'),
                 discountSlider: document.getElementById('discountSlider'),
                 btn10: document.getElementById('btn10'),
                 btn20: document.getElementById('btn20'),
+                selYear: document.getElementById('selYear'),
+                selMonth: document.getElementById('selMonth'),
+                selDay: document.getElementById('selDay'),
+                birthTime: document.getElementById('birthTime'),
+                calSlider: document.getElementById('calSlider'),
+                genSlider: document.getElementById('genSlider'),
+                fortuneInputStep: document.getElementById('fortuneInputStep'),
+                fortuneResultStep: document.getElementById('fortuneResultStep'),
+                btnCheckFortune: document.getElementById('btnCheckFortune'),
+                btnResetFortune: document.getElementById('btnResetFortune'),
                 scanModalAddress: document.getElementById('scanModalAddress'),
                 scanModalSut: document.getElementById('scanModalSut'),
                 scanModalKrw: document.getElementById('scanModalKrw'),
                 scanAmountDetails: document.getElementById('scanAmountDetails'),
                 sendModalSut: document.getElementById('sendModalSut'),
                 sendModalKrw: document.getElementById('sendModalKrw'),
-                scanFrame: document.getElementById('scanFrame')
+                scanFrame: document.getElementById('scanFrame'),
+                // Toggles Options
+                optSolar: document.getElementById('optSolar'),
+                optLunar: document.getElementById('optLunar'),
+                optMale: document.getElementById('optMale'),
+                optFemale: document.getElementById('optFemale')
             };
+            // Populate date selects
+            const today = new Date();
+            for (let y = today.getFullYear() - 100; y <= today.getFullYear(); y++) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.text = y;
+                if(y===1990) option.selected = true;
+                ui.selYear.appendChild(option);
+            }
+            for (let m = 1; m <= 12; m++) {
+                const option = document.createElement('option');
+                option.value = m;
+                option.text = m;
+                ui.selMonth.appendChild(option);
+            }
+            ui.selMonth.addEventListener('change', updateDays);
+            ui.selYear.addEventListener('change', updateDays);
+            updateDays();
         }
+        function updateDays() {
+            ui.selDay.innerHTML = '';
+            const daysInMonth = new Date(ui.selYear.value, ui.selMonth.value, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const option = document.createElement('option');
+                option.value = d;
+                option.text = d;
+                ui.selDay.appendChild(option);
+            }
+        }
+
+        // Load
+        window.addEventListener('load', function() {
+            lucide.createIcons();
+            initUI();
+            fetchSutData();
+            setInterval(fetchSutData, 300000);
+            if (ui.discountSlider) updateSliderVisual(10);
+            adjustInputWidth();
+            setupEventListeners();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            ui.krwInput.addEventListener('input', handleKrwInput);
+            document.getElementById('qrButton').addEventListener('click', startQrScanner);
+            document.querySelector('#scannerOverlay button').addEventListener('click', stopQrScanner);
+            ui.btn20.addEventListener('click', () => setDiscount(20));
+            ui.btn10.addEventListener('click', () => setDiscount(10));
+            ui.discountSlider.addEventListener('input', (e) => updateDiscountFromSlider(e.target.value));
+            document.querySelector('#resultCard button[aria-label="도움말 보기"]').addEventListener('click', toggleInfo);
+            document.querySelector('#main-content button[group="chart"]').addEventListener('click', toggleChart);
+            document.querySelector('#main-content button[group="fortune"]').addEventListener('click', openFortuneModal);
+            ui.btnCheckFortune.addEventListener('click', calculateAndShowFortune);
+            ui.btnResetFortune.addEventListener('click', resetFortune);
+            document.querySelector('#fortuneModal button:last-child').addEventListener('click', closeFortuneModal);
+            ui.copyBtn.addEventListener('click', copyResult);
+            ui.walletBtn.addEventListener('click', handleSendTransfer);
+            // Modal close buttons (using :last-child is fragile, better use onclick in html or specific IDs, but following pattern)
+            document.querySelector('#scanResultModal button:last-child').addEventListener('click', closeResultModal);
+            document.querySelector('#sendModal button:last-child').addEventListener('click', () => document.getElementById('sendModal').classList.add('hidden'));
+            document.querySelector('#manualOpenModal button').addEventListener('click', closeManualModal);
+            document.querySelector('#storeRedirectModal button:last-child').addEventListener('click', closeStoreModal);
+            document.querySelector('#previousRecordModal button:last-child').addEventListener('click', closePreviousModal);
+            document.getElementById('refreshText').parentElement.addEventListener('click', fetchSutData);
+        }
+
+        // --- Functions ---
+        function toggleCalendar() {
+            selectedCalendar = selectedCalendar === 'solar' ? 'lunar' : 'solar';
+            if(selectedCalendar === 'solar') {
+                ui.calSlider.style.transform = 'translateX(0)';
+                ui.optSolar.className = 'toggle-option active';
+                ui.optLunar.className = 'toggle-option inactive';
+            } else {
+                ui.calSlider.style.transform = 'translateX(100%)';
+                ui.optSolar.className = 'toggle-option inactive';
+                ui.optLunar.className = 'toggle-option active';
+            }
+        }
+        function toggleGender() {
+            selectedGender = selectedGender === 'male' ? 'female' : 'male';
+            if(selectedGender === 'male') {
+                ui.genSlider.style.transform = 'translateX(0)';
+                ui.optMale.className = 'toggle-option active';
+                ui.optFemale.className = 'toggle-option inactive';
+            } else {
+                ui.genSlider.style.transform = 'translateX(100%)';
+                ui.optMale.className = 'toggle-option inactive';
+                ui.optFemale.className = 'toggle-option active';
+            }
+        }
+
+        function calculateAndShowFortune() {
+            const y = parseInt(ui.selYear.value);
+            const m = parseInt(ui.selMonth.value);
+            const d = parseInt(ui.selDay.value);
+            const birthDate = new Date(y, m-1, d);
+            const today = new Date();
+            
+            const result = FortuneEngine.calculate(birthDate, today);
+            const dayOfWeek = today.getDay();
+            
+            const textLove = FortuneEngine.getText('love', result.love, result.relation, dayOfWeek);
+            const textMoney = FortuneEngine.getText('money', result.money, result.relation, dayOfWeek);
+            const textWork = FortuneEngine.getText('work', result.work, result.relation, dayOfWeek);
+            const textStudy = FortuneEngine.getText('work', result.study, result.relation, dayOfWeek);
+            const textHealth = FortuneEngine.getText('health', result.health, result.relation, dayOfWeek);
+
+            // Determine Theme
+            const avg = (result.love + result.money + result.work + result.health) / 4;
+            let theme = {};
+            let mainT, mainD, emoji;
+
+            if(avg >= 9) {
+                theme = { bg: "bg-green-50", text: "text-green-600", bar: "bg-green-500" };
+                mainT = "완벽에 가까운 하루예요";
+                mainD = "모든 기운이 당신을 돕고 있어요. 자신 있게 도전해보세요!";
+                emoji = "🍀";
+            } else if(avg >= 7) {
+                theme = { bg: "bg-blue-50", text: "text-blue-600", bar: "bg-blue-500" };
+                mainT = "꽤 괜찮은 하루가 될 거예요";
+                mainD = "긍정적인 흐름이 이어지고 있어요. 기분 좋은 일들이 기다립니다.";
+                emoji = "✨";
+            } else if(avg >= 5) {
+                theme = { bg: "bg-yellow-50", text: "text-yellow-600", bar: "bg-yellow-400" };
+                mainT = "평온하고 무난한 하루예요";
+                mainD = "큰 굴곡 없이 잔잔한 하루입니다. 여유를 즐겨보세요.";
+                emoji = "🙂";
+            } else {
+                theme = { bg: "bg-orange-50", text: "text-orange-600", bar: "bg-orange-500" };
+                mainT = "조금은 쉬어가도 좋아요";
+                mainD = `오늘은 에너지를 아끼는 게 좋겠어요. (${result.dayElement}의 기운과 충돌).`;
+                emoji = "☕";
+            }
+
+            // Update UI
+            const bgEl = document.getElementById('fortuneThemeBg');
+            bgEl.className = `p-6 rounded-[24px] shadow-sm relative overflow-hidden transition-colors duration-500 mb-6 text-center ${theme.bg}`;
+            document.getElementById('fortuneMainEmoji').innerText = emoji;
+            document.getElementById('fortuneMainTitle').innerText = mainT;
+            document.getElementById('fortuneMainDesc').innerText = mainD;
+
+            const setBar = (id, score, text) => {
+                const safeScore = Math.min(10, Math.max(1, score));
+                const textEl = document.getElementById(id);
+                const barEl = document.getElementById(id.replace('score','bar'));
+                
+                textEl.innerText = safeScore + "점";
+                textEl.className = `text-sm font-bold ${theme.text}`;
+                
+                barEl.style.width = "0%";
+                barEl.className = `h-full rounded-full transition-all duration-1000 ease-out ${theme.bar}`;
+                setTimeout(() => { barEl.style.width = (safeScore * 10) + "%"; }, 100);
+                
+                document.getElementById(id.replace('score','desc')).innerText = text;
+            };
+
+            setBar('scoreLove', result.love, textLove);
+            setBar('scoreMoney', result.money, textMoney);
+            setBar('scoreWork', result.work, textWork);
+            setBar('scoreStudy', result.study, textStudy);
+            setBar('scoreHealth', result.health, textHealth);
+
+            ui.fortuneInputStep.classList.add('hidden');
+            ui.fortuneResultStep.classList.remove('hidden');
+            ui.btnCheckFortune.classList.add('hidden');
+            ui.btnResetFortune.classList.remove('hidden');
+        }
+
+        function resetFortune() {
+            ui.fortuneInputStep.classList.remove('hidden');
+            ui.fortuneResultStep.classList.add('hidden');
+            ui.btnCheckFortune.classList.remove('hidden');
+            ui.btnResetFortune.classList.add('hidden');
+        }
+        function openFortuneModal() {
+            document.getElementById('fortuneModal').classList.remove('hidden');
+            document.getElementById('fortuneModal').classList.add('flex');
+        }
+        function closeFortuneModal() {
+            document.getElementById('fortuneModal').classList.remove('flex');
+            document.getElementById('fortuneModal').classList.add('hidden');
+        }
+
         function manageDailyReset() {
             const dateKey = 'aiCommentDate';
-            const historyKey = 'aiCommentHistory';
             const today = new Date().toDateString();
-            const lastDate = localStorage.getItem(dateKey);
-            if (lastDate !== today) {
-                localStorage.setItem(historyKey, '[]');
+            if (localStorage.getItem(dateKey) !== today) {
+                localStorage.setItem('aiCommentHistory', '[]');
                 localStorage.setItem(dateKey, today);
             }
         }
-        window.addEventListener('load', function() {
-            if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                lucide.createIcons();
-            }
-            
-            // [Fix] DOM 로드 후 UI 객체 초기화
-            initUI();
-            
-            manageDailyReset();
-            fetchNews().then(() => reloadData());
-            setInterval(() => { fetchNews(); fetchSutData(); }, 300000);
-            
-            // UI 초기화 후 호출
-            if (ui.discountSlider) updateSliderVisual(10);
+        function handleKrwInput(e) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            if (val.length > 1 && val.startsWith('0')) val = val.substring(1);
+            inputAmount = val;
+            e.target.value = val ? Number(val).toLocaleString() : '';
+            updateScreenState();
             adjustInputWidth();
-            checkAndDisplayPreviousRecord(); // [NEW] Load previous record on page load
-            
-            // Event Listeners
-            if (ui.krwInput) {
-                ui.krwInput.addEventListener('input', function(e) {
-                    let val = e.target.value.replace(/[^0-9]/g, '');
-                    if (val.length > 1 && val.startsWith('0')) val = val.substring(1);
-                    inputAmount = val;
-                    e.target.value = val ? Number(val).toLocaleString() : '';
-                    updateScreenState();
-                    adjustInputWidth();
-                });
-            }
-        });
-        function reloadData() {
-            fetchRetryCount = 0;
-            fetchSutData();
         }
-        
-        // [NEW] Dynamic Input Width Function (Sensitive & Font Matched)
-        function adjustInputWidth() {
-            if (!ui.krwInput) return;
-            const val = ui.krwInput.value || ui.krwInput.placeholder;
-            
-            const span = document.createElement('span');
-            span.style.font = window.getComputedStyle(ui.krwInput).font;
-            span.style.fontWeight = window.getComputedStyle(ui.krwInput).fontWeight;
-            span.style.fontSize = window.getComputedStyle(ui.krwInput).fontSize;
-            span.style.letterSpacing = window.getComputedStyle(ui.krwInput).letterSpacing;
-            span.style.visibility = 'hidden';
-            span.style.position = 'absolute';
-            span.style.whiteSpace = 'pre';
-            span.innerText = val;
-            document.body.appendChild(span);
-            
-            const width = span.offsetWidth;
-            ui.krwInput.style.width = (width + 2) + 'px';
-            
-            document.body.removeChild(span);
-        }
-        // Discount Logic
-        function setDiscount(rate) {
-            discountRate = rate;
-            updateDiscountUI(rate);
-            calculate();
-        }
-        function updateDiscountFromSlider(val) {
-            discountRate = parseInt(val);
-            updateDiscountUI(discountRate, true);
-            calculate();
-        }
+        function setDiscount(rate) { discountRate = rate; updateDiscountUI(rate); calculate(); }
+        function updateDiscountFromSlider(val) { discountRate = parseInt(val); updateDiscountUI(discountRate, true); calculate(); }
         function updateDiscountUI(rate, isSlider = false) {
-            if(ui.discountDisplay) ui.discountDisplay.innerText = `${rate}%`;
-            if(!isSlider && ui.discountSlider) ui.discountSlider.value = rate;
-            
-            const active = "discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95";
-            const inactive = "discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95";
-            
-            if (ui.btn10 && ui.btn20) {
-                if (rate === 10) { ui.btn10.className = active; ui.btn20.className = inactive; }
-                else if (rate === 20) { ui.btn10.className = inactive; ui.btn20.className = active; }
-                else { ui.btn10.className = inactive; ui.btn20.className = inactive; }
-            }
-            
+            ui.discountDisplay.innerText = `${rate}%`;
+            if (!isSlider) ui.discountSlider.value = rate;
+            const active = "discount-btn active w-full py-2.5 text-xs font-bold rounded-lg shadow-sm";
+            const inactive = "discount-btn inactive w-full py-2.5 text-xs font-bold rounded-lg shadow-sm";
+            if (rate === 10) { ui.btn10.className = active; ui.btn20.className = inactive; }
+            else if (rate === 20) { ui.btn10.className = inactive; ui.btn20.className = active; }
+            else { ui.btn10.className = inactive; ui.btn20.className = inactive; }
             updateSliderVisual(rate);
         }
         function updateSliderVisual(val) {
-            if (ui.discountSlider) {
-                const percentage = (val / 50) * 100;
-                ui.discountSlider.style.backgroundSize = `${percentage}% 100%`;
-            }
+            const percentage = (val / 50) * 100;
+            ui.discountSlider.style.backgroundSize = `${percentage}% 100%`;
         }
         function updateScreenState() {
             if (!inputAmount || inputAmount === '0') {
-                if(ui.krwKorean) ui.krwKorean.innerText = '';
-                if(ui.resultCard) {
-                    ui.resultCard.classList.add('opacity-50', 'scale-95');
-                    ui.resultCard.classList.remove('opacity-100', 'scale-100', 'bg-purple-50');
-                    ui.resultCard.classList.add('bg-[#f2f4f6]');
-                }
-                disableButton(ui.copyBtn); disableButton(ui.walletBtn);
-                if(ui.sutAmountDisplay) ui.sutAmountDisplay.innerText = '0';
+                ui.krwKorean.innerText = '';
+                ui.resultCard.classList.add('opacity-50', 'scale-95');
+                ui.resultCard.classList.remove('opacity-100', 'scale-100', 'bg-purple-50');
+                ui.resultCard.classList.add('bg-[#f2f4f6]');
+                disableButton(ui.copyBtn);
+                disableButton(ui.walletBtn);
+                ui.sutAmountDisplay.innerText = '0';
             } else {
                 const numVal = Number(inputAmount);
-                if(ui.krwKorean) ui.krwKorean.innerText = convertToKoreanNumber(numVal);
-                if(ui.resultCard) {
-                    ui.resultCard.classList.remove('opacity-50', 'scale-95', 'bg-[#f2f4f6]');
-                    ui.resultCard.classList.add('opacity-100', 'scale-100', 'bg-purple-50');
-                }
+                ui.krwKorean.innerText = convertToKoreanNumber(numVal);
+                ui.resultCard.classList.remove('opacity-50', 'scale-95', 'bg-[#f2f4f6]');
+                ui.resultCard.classList.add('opacity-100', 'scale-100', 'bg-purple-50');
                 enableButton(ui.copyBtn, 'bg-gray-200', 'text-gray-800');
                 enableButton(ui.walletBtn, 'bg-purple-600', 'text-white');
                 calculate();
             }
         }
-        
         function convertToKoreanNumber(num) {
-            if(num < 10000) return '';
+            if (num < 10000) return '';
             const units = ['', '만', '억', '조'];
             let result = '';
             let temp = num;
-            for(let i=0; i<units.length; i++) {
+            for (let i = 0; i < units.length; i++) {
                 let chunk = temp % 10000;
                 temp = Math.floor(temp / 10000);
-                if(chunk > 0) {
+                if (chunk > 0) {
                     let unitPart = chunk.toLocaleString();
                     if (i > 0) unitPart += units[i];
                     result = unitPart + (result ? ' ' + result : '');
@@ -722,51 +934,26 @@
             }
             return result + '원';
         }
-        // Data & API
-        function calculateQualityScore(source, data) {
-            let score = 0;
-            const now = Date.now();
-            if (!data) return -1;
-            if (source === 'coingecko') {
-                if (data.prices && data.prices.length > 0) score += 50;
-                const lastTime = data.prices[data.prices.length-1][0];
-                if (now - lastTime < 3600000) score += 30;
-            } else if (source === 'dexscreener') {
-                if (data.pairs && data.pairs.length > 0) score += 40;
-            }
-            return score;
-        }
         async function fetchSutData(retryCount = 0) {
-            if(ui.refreshIcon) ui.refreshIcon.classList.add('animate-spin');
+            ui.refreshIcon.classList.add('animate-spin');
             updateStatusUI('loading', "데이터 확인 중...");
-            
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
             try {
                 const cgPriceUrl = 'https://api.coingecko.com/api/v3/simple/token_price/polygon-pos?contract_addresses=0x98965474ecbec2f532f1f780ee37b0b05f77ca55&vs_currencies=krw&include_24hr_change=true';
                 const cgChartUrl = 'https://api.coingecko.com/api/v3/coins/super-trust/market_chart?vs_currency=krw&days=1';
                 const dexUrl = 'https://api.dexscreener.com/latest/dex/tokens/0x98965474ecbec2f532f1f780ee37b0b05f77ca55';
-                const [cgPriceRes, cgChartRes, dexRes] = await Promise.allSettled([
-                    fetch(cgPriceUrl, { signal: controller.signal }),
-                    fetch(cgChartUrl, { signal: controller.signal }),
-                    fetch(dexUrl, { signal: controller.signal })
+                const [cgPriceRes, cgChartRes, dexRes] = await Promise.all([
+                    fetch(cgPriceUrl, { signal: controller.signal }).catch(() => ({ ok: false })),
+                    fetch(cgChartUrl, { signal: controller.signal }).catch(() => ({ ok: false })),
+                    fetch(dexUrl, { signal: controller.signal }).catch(() => ({ ok: false }))
                 ]);
                 clearTimeout(timeoutId);
-                let cgPriceData = null, cgChartData = null, dexData = null;
-                let cgScore = 0, dexScore = 0;
-                if (cgPriceRes.status === 'fulfilled' && cgChartRes.status === 'fulfilled') {
-                    if (cgPriceRes.value.ok && cgChartRes.value.ok) {
-                        cgPriceData = await cgPriceRes.value.json();
-                        cgChartData = await cgChartRes.value.json();
-                        if (cgPriceData['0x98965474ecbec2f532f1f780ee37b0b05f77ca55']) {
-                            cgScore = calculateQualityScore('coingecko', cgChartData);
-                        }
-                    }
-                }
-                if (dexRes.status === 'fulfilled') {
-                    dexData = await dexRes.value.json();
-                    dexScore = calculateQualityScore('dexscreener', dexData);
-                }
+                let cgPriceData = cgPriceRes.ok ? await cgPriceRes.json() : null;
+                let cgChartData = cgChartRes.ok ? await cgChartRes.json() : null;
+                let dexData = dexRes.ok ? await dexRes.json() : null;
+                let cgScore = calculateQualityScore('coingecko', cgChartData);
+                let dexScore = calculateQualityScore('dexscreener', dexData);
                 let finalPrice = 0, finalChange = 0, finalChartData = [];
                 let grade = 'D';
                 if (cgScore > 0 && cgScore >= dexScore) {
@@ -785,62 +972,69 @@
                 } else {
                     throw new Error("All sources failed");
                 }
-                if(finalChartData.length > 0) {
+                if (finalChartData.length > 0) {
                     const lastTime = finalChartData[finalChartData.length-1].time;
                     const now = Math.floor(Date.now()/1000);
-                    if(now - lastTime > 60) finalChartData.push({time: now, value: finalPrice});
-                    else finalChartData[finalChartData.length-1].value = finalPrice;
+                    if (now - lastTime < 60) finalChartData[finalChartData.length-1].value = finalPrice;
+                    else finalChartData.push({time: now, value: finalPrice});
                 }
                 currentSutPrice = finalPrice;
                 priceGrade = grade;
                 isPriceLoaded = true;
                 updatePriceInfoUI(grade, finalPrice);
-                analyzeAndGenerateMessage(finalChange);
                 updateLastTime();
-                
                 if (finalChartData.length > 0) {
-                    let minVal=finalChartData[0].value, maxVal=finalChartData[0].value;
-                    let minTime=finalChartData[0].time, maxTime=finalChartData[0].time;
+                    let minVal = finalChartData[0].value, maxVal = finalChartData[0].value;
+                    let minTime = finalChartData[0].time, maxTime = finalChartData[0].time;
                     finalChartData.forEach(item => {
-                        if(item.value < minVal) { minVal=item.value; minTime=item.time; }
-                        if(item.value > maxVal) { maxVal=item.value; maxTime=item.time; }
+                        if (item.value < minVal) { minVal = item.value; minTime = item.time; }
+                        if (item.value > maxVal) { maxVal = item.value; maxTime = item.time; }
                     });
                     const markers = [
                         { time: minTime, position: 'belowBar', color: '#3b82f6', shape: 'circle', size: 0.4 },
                         { time: maxTime, position: 'aboveBar', color: '#ef4444', shape: 'circle', size: 0.4 }
                     ];
-                    markers.sort((a,b)=>a.time-b.time);
+                    markers.sort((a, b) => a.time - b.time);
                     renderTradingViewChart(finalChartData, markers);
                 } else {
-                    if(ui.chartLoader) ui.chartLoader.classList.add('hidden');
-                    if(ui.chartError) {
-                        ui.chartError.classList.remove('hidden');
-                        ui.chartError.innerText = "실시간 차트 데이터 미지원 (가격은 정상입니다)";
-                    }
+                    ui.chartLoader.classList.add('hidden');
+                    ui.chartError.classList.remove('hidden');
+                    ui.chartError.innerText = "실시간 차트 데이터 미지원 (가격은 정상입니다)";
                 }
             } catch (error) {
-                console.error("Load Error:", error);
-                if (retryCount < 1) {
-                    setTimeout(() => fetchSutData(retryCount + 1), 1500);
+                if (retryCount < 2) {
+                    setTimeout(() => fetchSutData(retryCount + 1), 2000);
                 } else {
                     handleFetchError();
                 }
             } finally {
-                if(ui.refreshIcon) ui.refreshIcon.classList.remove('animate-spin');
+                ui.refreshIcon.classList.remove('animate-spin');
             }
+        }
+        function calculateQualityScore(source, data) {
+            let score = 0;
+            const now = Date.now();
+            if (!data) return -1;
+            if (source === 'coingecko') {
+                if (data.prices && data.prices.length > 0) score += 50;
+                const lastTime = data.prices[data.prices.length - 1][0];
+                if (now - lastTime < 3600000) score += 30;
+            } else if (source === 'dexscreener') {
+                if (data.pairs && data.pairs.length > 0) score += 40;
+            }
+            return score;
         }
         function updateStatusUI(state, msg) {
             if (state === 'loading') {
-                if(ui.statusIndicator) ui.statusIndicator.className = "w-2 h-2 bg-yellow-400 rounded-full animate-pulse";
-                if(ui.lastUpdatedTime) ui.lastUpdatedTime.innerText = msg;
+                ui.statusIndicator.className = "w-2 h-2 bg-yellow-400 rounded-full animate-pulse";
+                ui.lastUpdatedTime.innerText = msg;
             } else if (state === 'error') {
-                if(ui.statusIndicator) ui.statusIndicator.className = "w-2 h-2 bg-red-500 rounded-full";
+                ui.statusIndicator.className = "w-2 h-2 bg-red-500 rounded-full";
             }
         }
         function updatePriceInfoUI(grade, price) {
             let displayPrice = "";
             let indicatorClass = "w-2 h-2 rounded-full ";
-            
             if (grade === 'A') {
                 displayPrice = `1 SUT = ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} KRW`;
                 indicatorClass += "bg-green-500 animate-pulse";
@@ -851,388 +1045,106 @@
                 displayPrice = `최근 거래 기준 (약 ${Math.round(price)}원)`;
                 indicatorClass += "bg-orange-500";
             }
-            
-            if(ui.priceDisplay) ui.priceDisplay.innerText = displayPrice;
-            if(ui.statusIndicator) ui.statusIndicator.className = indicatorClass;
-            if(inputAmount) calculate();
+            ui.priceDisplay.innerText = displayPrice;
+            ui.statusIndicator.className = indicatorClass;
+            if (inputAmount) calculate();
         }
         function handleFetchError() {
             updateStatusUI('error', '연결 실패');
-            if(ui.priceDisplay) ui.priceDisplay.innerText = "가격 동기화 중";
-            if(ui.aiText) ui.aiText.innerText = "데이터를 불러올 수 없어요 🥲";
-            if(ui.chartLoader) ui.chartLoader.classList.add('hidden');
-            if(ui.chartError) ui.chartError.classList.remove('hidden');
+            ui.priceDisplay.innerText = "가격 동기화 중";
+            ui.chartLoader.classList.add('hidden');
+            ui.chartError.classList.remove('hidden');
         }
-        function updateLastTime() { const now = new Date(); const timeStr = now.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' }); if(ui.lastUpdatedTime) ui.lastUpdatedTime.innerText = `업데이트됨 (${timeStr})`; }
-        function analyzeAndGenerateMessage(change) {
-            if (latestNewsItem && (!localStorage.getItem('sutPay_newsSeen'))) {
-                 let cleanSummary = cleanNewsTitle(latestNewsItem.title);
-                 if(ui.aiText) ui.aiText.innerHTML = `<span class="inline-flex items-center gap-1 text-purple-600 font-bold mr-1"><i data-lucide="newspaper" class="w-4 h-4"></i></span> ${cleanSummary}`;
-                 if(window.lucide) lucide.createIcons();
-                 if(newsSource) newsSource.innerText = "Google News";
-                 return;
-            }
-            if(newsSource) newsSource.innerText = "";
-            generateTechnicalComment(change);
-        }
-        function generateTechnicalComment(change) {
-            const absChange = Math.abs(change).toFixed(2);
-            let category = change >= 5 ? 'surge' : (change >= 0 ? 'rise' : (change >= -5 ? 'drop' : 'plunge'));
-            const pctStr = `<span class="text-sm font-medium ml-1 text-slate-500">(+${absChange}%)</span>`;
-            const templates = {
-                surge: [[`강한 상승 흐름이 확인되고 있어요 ${pctStr}`]],
-                rise: [[`안정적인 흐름을 유지하고 있어요 ${pctStr}`]],
-                drop: [[`가격이 소폭 조정 받고 있어요`], [`잠시 숨 고르기 흐름이 나타나고 있어요`]],
-                plunge: [[`가격 조정 폭이 다소 크게 나타나고 있어요`], [`낮아진 가격으로 결제 효율(구매력)이 대폭 상승했어요`]]
-            };
-            const msg = templates[category][0][0];
-            if(ui.aiText) ui.aiText.innerHTML = msg;
+        function updateLastTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' });
+            ui.lastUpdatedTime.innerText = `업데이트됨 (${timeStr})`;
         }
         function renderTradingViewChart(data, markers) {
-             const container = document.getElementById('tvChartContainer');
-             if(!container) return;
-             if(ui.chartLoader) ui.chartLoader.classList.add('hidden');
-             if(ui.chartError) ui.chartError.classList.add('hidden');
-             if (!window.LightweightCharts) return;
-             if (!chartInstance) {
-                 chartInstance = window.LightweightCharts.createChart(container, {
-                     layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
-                     grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-                     rightPriceScale: { borderVisible: false },
-                     timeScale: {
+            const container = document.getElementById('tvChartContainer');
+            if (!container || !window.LightweightCharts) return;
+            ui.chartLoader.classList.add('hidden');
+            ui.chartError.classList.add('hidden');
+            if (!chartInstance) {
+                chartInstance = window.LightweightCharts.createChart(container, {
+                    layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
+                    grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+                    rightPriceScale: { borderVisible: false },
+                    timeScale: {
                         borderVisible: false,
                         timeVisible: true,
                         secondsVisible: false,
-                        tickMarkFormatter: (time) => {
-                            const date = new Date(time * 1000);
-                            return date.toLocaleTimeString('ko-KR', {
-                                timeZone: 'Asia/Seoul',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                            });
-                        }
-                     },
-                     crosshair: { vertLine: { labelBackgroundColor: '#9333ea' }, horzLine: { labelBackgroundColor: '#9333ea' } },
-                     handleScroll: false, handleScale: false,
-                     localization: {
+                        tickMarkFormatter: (time) => new Date(time * 1000).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }),
+                    },
+                    crosshair: { vertLine: { labelBackgroundColor: '#9333ea' }, horzLine: { labelBackgroundColor: '#9333ea' } },
+                    handleScroll: false,
+                    handleScale: false,
+                    localization: {
                         timeFormatter: (time) => {
                             const date = new Date(time * 1000);
-                            const formatter = new Intl.DateTimeFormat('ko-KR', {
-                                timeZone: 'Asia/Seoul',
-                                month: 'numeric',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                            });
+                            const formatter = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
                             const parts = formatter.formatToParts(date);
                             const m = parts.find(p => p.type === 'month').value;
                             const d = parts.find(p => p.type === 'day').value;
                             const h = parts.find(p => p.type === 'hour').value;
                             const min = parts.find(p => p.type === 'minute').value;
-                            
                             return `${m}월 ${d}일 ${h}:${min}`;
                         }
                     }
-                 });
-                 pastSeries = chartInstance.addAreaSeries({ topColor: 'rgba(156, 163, 175, 0.4)', bottomColor: 'rgba(156, 163, 175, 0.0)', lineColor: '#9ca3af', lineWidth: 2, crosshairMarkerVisible: false });
-                 todaySeries = chartInstance.addAreaSeries({ topColor: 'rgba(147, 51, 234, 0.2)', bottomColor: 'rgba(147, 51, 234, 0.0)', lineColor: '#9333ea', lineWidth: 2 });
-                 new ResizeObserver(entries => { if(entries.length) { const r = entries[0].contentRect; chartInstance.applyOptions({width: r.width, height: r.height}); } }).observe(container);
-             }
-             const now = new Date();
-             const kstOptions = { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' };
-             const todayStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(now);
-             const pastData=[], todayData=[];
-             
-             data.forEach(d => {
-                 const date = new Date(d.time*1000);
-                 if(new Intl.DateTimeFormat('ko-KR', kstOptions).format(date) === todayStr) todayData.push(d); else pastData.push(d);
-             });
-             
-             if(pastData.length>0 && todayData.length>0) todayData.unshift(pastData[pastData.length-1]);
-             
-             if(pastSeries) pastSeries.setData(pastData);
-             if(todaySeries) {
-                 todaySeries.setData(todayData);
-                 const todayMarkers = markers.filter(m => new Intl.DateTimeFormat('ko-KR', kstOptions).format(new Date(m.time*1000)) === todayStr);
-                 todaySeries.setMarkers(todayMarkers);
-             }
-             chartInstance.timeScale().fitContent();
+                });
+                pastSeries = chartInstance.addAreaSeries({ topColor: 'rgba(156, 163, 175, 0.4)', bottomColor: 'rgba(156, 163, 175, 0.0)', lineColor: '#9ca3af', lineWidth: 2, crosshairMarkerVisible: false });
+                todaySeries = chartInstance.addAreaSeries({ topColor: 'rgba(147, 51, 234, 0.2)', bottomColor: 'rgba(147, 51, 234, 0.0)', lineColor: '#9333ea', lineWidth: 2 });
+                new ResizeObserver(entries => {
+                    if (entries.length) {
+                        const r = entries[0].contentRect;
+                        chartInstance.applyOptions({ width: r.width, height: r.height });
+                    }
+                }).observe(container);
+            }
+            const now = new Date();
+            const kstOptions = { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const todayStr = new Intl.DateTimeFormat('ko-KR', kstOptions).format(now);
+            const pastData = [], todayData = [];
+            data.forEach(d => {
+                const date = new Date(d.time * 1000);
+                if (new Intl.DateTimeFormat('ko-KR', kstOptions).format(date) === todayStr) todayData.push(d);
+                else pastData.push(d);
+            });
+            if (pastData.length > 0 && todayData.length > 0) todayData.unshift(pastData[pastData.length - 1]);
+            pastSeries.setData(pastData);
+            todaySeries.setData(todayData);
+            const todayMarkers = markers.filter(m => new Intl.DateTimeFormat('ko-KR', kstOptions).format(new Date(m.time * 1000)) === todayStr);
+            todaySeries.setMarkers(todayMarkers);
+            chartInstance.timeScale().fitContent();
         }
-        function cleanNewsTitle(t) { return t.replace(/[\(\[\{].*?[\)\]\}]/g, '').trim(); }
-        async function fetchNews() {
-            try {
-                const rssUrl = encodeURIComponent("https://news.google.com/rss/search?q=SUT+coin+OR+SuperTrust+OR+L2U+platform&hl=ko&gl=KR&ceid=KR:ko");
-                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
-                const data = await response.json();
-                if (data.items && data.items.length > 0) {
-                     const now = Date.now();
-                     const recentNews = data.items.filter(item => (now - new Date(item.pubDate).getTime()) < 259200000); // 3 days
-                     if (recentNews.length > 0) {
-                         const item = recentNews[0];
-                         latestNewsItem = { title: cleanNewsTitle(item.title), link: item.link, pubDate: item.pubDate };
-                     }
-                }
-            } catch (e) { console.error("News Error", e); }
-        }
-        
-        function toggleInfo() { const el = document.getElementById('infoText'); if(el) el.classList.toggle('hidden'); }
-        function disableButton(b) {
-            if(!b) return;
-            b.disabled=true;
-            b.className="flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl transition-all flex items-center justify-center gap-2";
-        }
-        function enableButton(b,bg,tc) {
-            if(!b) return;
-            b.disabled=false;
-            b.className=`flex-1 ${bg} ${tc} font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm`;
-        }
-        function calculate() {
-            if(!inputAmount || currentSutPrice===0 || priceGrade === 'D') { if(ui.sutAmountDisplay) ui.sutAmountDisplay.innerText='0'; return; }
-            const krw = parseInt(inputAmount);
-            const dKrw = krw * ((100-discountRate)/100);
-            const sut = Math.ceil((dKrw/currentSutPrice)*1000)/1000;
-            if(ui.sutAmountDisplay) ui.sutAmountDisplay.innerText = sut.toLocaleString(undefined, {minimumFractionDigits:3, maximumFractionDigits:3});
-        }
-        function copyResult() {
-             if(!ui.sutAmountDisplay) return;
-             const textToCopy = ui.sutAmountDisplay.innerText.replace(/,/g, '');
-             const textArea = document.createElement("textarea"); textArea.value = textToCopy; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-             showToast(`${textToCopy} SUT 복사되었어요`);
-        }
-        
-        // Handle Send Transfer (Deep Link)
-        function handleSendTransfer() {
-            if(!ui.sutAmountDisplay || !ui.krwInput) return;
-            const amountText = ui.sutAmountDisplay.innerText.replace(/,/g, '');
-            const amount = parseFloat(amountText);
-            const krwText = ui.krwInput.value;
-            if (!amount || amount <= 0) { alert("결제할 금액을 먼저 입력해주세요."); ui.krwInput.focus(); return; }
-            // 1. Copy SUT
-            const textArea = document.createElement("textarea"); textArea.value = amountText; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-            
-            // [NEW] Save to localStorage (no address in this flow)
-            saveLastCalculation(amountText, krwText, '');
-            
-            // 2. Populate Modal
-            if(ui.sendModalSut) ui.sendModalSut.innerText = `${amountText} SUT`;
-            if(ui.sendModalKrw) ui.sendModalKrw.innerText = `${krwText}원`;
-            document.getElementById('sendModal').classList.remove('hidden');
-            document.getElementById('sendModal').classList.add('flex');
-            
-            // 3. Auto Redirect (Immediately)
-            // [Modified] 딜레이 없이 즉시 실행하여 브라우저 차단 방지
-            directOpenWallet();
-        }
-        
+        function toggleInfo() { document.getElementById('infoText').classList.toggle('hidden'); }
+        function disableButton(b) { if(!b)return; b.disabled=true; b.className = "flex-1 bg-[#e5e8eb] text-[#b0b8c1] font-bold text-base py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"; }
+        function enableButton(b, bg, tc) { if(!b)return; b.disabled=false; b.className = `flex-1 ${bg} ${tc} font-bold text-base py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm`; }
+        function calculate() { if(!inputAmount||currentSutPrice===0||priceGrade==='D'){ui.sutAmountDisplay.innerText='0'; return;} const krw=parseInt(inputAmount); const dKrw=krw*((100-discountRate)/100); const sut=Math.ceil((dKrw / currentSutPrice) * 1000) / 1000; ui.sutAmountDisplay.innerText = sut.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 }); }
+        function copyResult() { const t=ui.sutAmountDisplay.innerText.replace(/,/g,''); navigator.clipboard.writeText(t).then(()=>showToast(`${t} SUT 복사되었어요`)); }
+        function handleSendTransfer() { const t=ui.sutAmountDisplay.innerText.replace(/,/g,''); const amount = parseFloat(t); if (!amount || amount <= 0) return alert("결제할 금액을 먼저 입력해주세요."); navigator.clipboard.writeText(t); ui.sendModalSut.innerText = `${t} SUT`; ui.sendModalKrw.innerText = `${ui.krwInput.value}원`; document.getElementById('sendModal').classList.remove('hidden'); document.getElementById('sendModal').classList.add('flex'); directOpenWallet(); }
         function directOpenWallet() {
-             const now = new Date().getTime();
-             
-             // 1. Try Custom Scheme (Best for installed apps)
-             // 앱이 설치되어 있다면 이 방식이 가장 빠릅니다.
-             window.location.href = "trust://open";
-             
-             // 2. Fallback to Universal Link (If custom scheme fails)
-             // 앱이 열리지 않고 페이지에 머물러 있다면(document.hidden이 false), 유니버설 링크 시도
-             setTimeout(() => {
-                 if (!document.hidden) {
-                     window.location.href = "https://link.trustwallet.com/open";
-                 }
-             }, 1000);
+            window.location.href = "trust://open";
+            setTimeout(() => {
+                if (!document.hidden) window.location.href = "https://link.trustwallet.com/open";
+            }, 1000);
         }
-
-        // [MODIFIED] Copy And Open (From Scan)
-        function copyAndOpenWallet() {
-             const textArea = document.createElement("textarea"); textArea.value = scannedAddress; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-             showToast("주소가 복사되었습니다. 앱을 켤게요.");
-             
-             // [Modified] 딜레이 없이 즉시 실행
-             directOpenWallet();
-        }
+        function copyAndOpenWallet() { navigator.clipboard.writeText(scannedAddress).then(()=>{showToast("주소 복사됨. 지갑 열기..."); directOpenWallet();}); }
         function closeResultModal() { document.getElementById('scanResultModal').classList.add('hidden'); }
         function closeManualModal() { document.getElementById('manualOpenModal').classList.add('hidden'); }
         function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
-        function showToast(m) { const t=document.getElementById('toast'); if(t){ t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000);}}
-        
-        // QR Functions (Corrected with Animation)
-        function startQrScanner() {
-            isProcessingScan = false;
-            const scannerOverlay = document.getElementById('scannerOverlay');
-            const qrButton = document.getElementById('qrButton');
-
-            // [Modified] Calculate center for Circular Reveal
-            const rect = qrButton.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            scannerOverlay.style.setProperty('--origin-x', `${centerX}px`);
-            scannerOverlay.style.setProperty('--origin-y', `${centerY}px`);
-
-            scannerOverlay.classList.remove('hidden');
-            scannerOverlay.classList.remove('hide'); // Ensure hide class is gone
-            // [Modified] flex 대신 block이나 visible 사용 (여기선 flex 유지하되 구조가 바뀜)
-            scannerOverlay.classList.add('flex');
-            
-            // Force reflow
-            void scannerOverlay.offsetWidth;
-
-            requestAnimationFrame(() => {
-                scannerOverlay.classList.add('show');
-            });
-
-            // [Modified] Delay camera start to prevent animation jank
-            setTimeout(() => {
-                if(html5QrCode){try{html5QrCode.clear()}catch{}}
-                html5QrCode = new Html5Qrcode("qr-reader");
-                // [Modified] qrbox 크기를 CSS 프레임 크기(260px)와 비슷하게 설정하여 인식률 최적화
-                const config={fps:20, qrbox:{width:260,height:260}, aspectRatio: 1.0, disableFlip: false};
-                html5QrCode.start({facingMode:"environment"}, config, onScanSuccess).catch(err=>{alert("카메라 권한 필요");});
-            }, 300);
-        }
-        function stopQrScanner() {
-            const scannerOverlay = document.getElementById('scannerOverlay');
-            const qrButton = document.getElementById('qrButton');
-
-            // [Modified] Recalculate position for exit animation
-            if(qrButton) {
-                const rect = qrButton.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                scannerOverlay.style.setProperty('--origin-x', `${centerX}px`);
-                scannerOverlay.style.setProperty('--origin-y', `${centerY}px`);
-            }
-
-            scannerOverlay.classList.remove('show');
-            scannerOverlay.classList.add('hide');
-
-            setTimeout(() => {
-                scannerOverlay.classList.add('hidden');
-                scannerOverlay.classList.remove('flex', 'hide');
-                // Reset clip path to prevent potential interaction issues or persistent state
-                scannerOverlay.style.removeProperty('--origin-x');
-                scannerOverlay.style.removeProperty('--origin-y');
-            }, 500); // Match transition duration
-
-            if(html5QrCode) html5QrCode.stop().catch(()=>{});
-        }
-        function onScanSuccess(d) {
-            if(isProcessingScan) return;
-            isProcessingScan=true;
-            
-            // Add Glow Effect on Success
-            const frame = document.getElementById('scanFrame');
-            if(frame) frame.classList.add('scan-success');
-            
-            setTimeout(()=>{
-                scannedAddress=d;
-                stopQrScanner();
-                
-                // [NEW] Logic: Check input amount
-                const inputVal = ui.krwInput ? ui.krwInput.value : '';
-                const hasAmount = inputVal && inputVal !== '0';
-                
-                if (hasAmount) {
-                    ui.scanAmountDetails.classList.remove('hidden');
-                    ui.scanModalAddress.innerText = d;
-                    ui.scanModalSut.innerText = ui.sutAmountDisplay.innerText + " SUT";
-                    ui.scanModalKrw.innerText = inputVal + "원";
-                    // [NEW] Save to localStorage
-                    saveLastCalculation(ui.sutAmountDisplay.innerText.replace(/,/g, ''), inputVal, d);
-                } else {
-                    // Hide amount details if 0
-                    ui.scanAmountDetails.classList.add('hidden');
-                    ui.scanModalAddress.innerText = d;
-                    // [NEW] Save with no amount (but address only - optional logic)
-                    saveLastCalculation('', '', d);
-                }
-                
-                document.getElementById('scanResultModal').classList.remove('hidden');
-                document.getElementById('scanResultModal').classList.add('flex');
-                
-                // Remove Glow Effect
-                if(frame) frame.classList.remove('scan-success');
-            }, 800); // Slightly longer delay to show success effect
-        }
-
-        // [NEW] Save last calculation to localStorage
-        function saveLastCalculation(sutAmount, krwAmount, address) {
-            const data = {
-                timestamp: Date.now(),
-                sutAmount: sutAmount || '',
-                krwAmount: krwAmount || '',
-                address: address || ''
-            };
-            localStorage.setItem('lastCalculation', JSON.stringify(data));
-        }
-
-        // [NEW] Check and display previous record
-        function checkAndDisplayPreviousRecord() {
-            const data = JSON.parse(localStorage.getItem('lastCalculation'));
-            if (!data) return;
-
-            const now = Date.now();
-            if (now - data.timestamp > 300000) { // 5 minutes = 300000 ms
-                localStorage.removeItem('lastCalculation');
-                return;
-            }
-
-            // Create previous record UI if valid
-            const main = document.querySelector('main');
-            if (!main) return;
-
-            const prevDiv = document.createElement('div');
-            prevDiv.id = 'previousRecord';
-            prevDiv.className = 'bg-purple-50 p-3 rounded-xl mb-4 flex justify-between items-center text-sm text-black font-medium';
-
-            let content = '이전 기록: ';
-            if (data.sutAmount) {
-                content += `<span class="font-bold text-lg text-purple-600">${data.sutAmount} SUT</span> (<span class="text-purple-600">${data.krwAmount}원</span>)`;
-            } else {
-                content += '지갑 주소';
-            }
-
-            if (data.address) {
-                // From scan
-                prevDiv.innerHTML = content + `<button onclick="showPreviousDetails()" class="text-purple-600 underline ml-2">지갑 주소 보기</button>`;
-            } else {
-                // From send
-                prevDiv.innerHTML = content;
-            }
-
-            main.insertBefore(prevDiv, ui.resultCard); // Insert before resultCard for visibility
-        }
-
-        // [NEW] Show previous details in modal
-        function showPreviousDetails() {
-            const data = JSON.parse(localStorage.getItem('lastCalculation'));
-            if (!data) return;
-
-            document.getElementById('prevModalKrw').innerText = data.krwAmount ? data.krwAmount + '원' : '없음';
-            const addrDetails = document.getElementById('prevAddressDetails');
-            if (data.address) {
-                addrDetails.classList.remove('hidden');
-                document.getElementById('prevModalAddress').innerText = data.address;
-            } else {
-                addrDetails.classList.add('hidden');
-            }
-
-            const modal = document.getElementById('previousRecordModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        // [NEW] Copy previous address
-        function copyPrevAddress() {
-            const addr = document.getElementById('prevModalAddress').innerText;
-            const textArea = document.createElement("textarea"); textArea.value = addr; document.body.appendChild(textArea); textArea.select(); document.execCommand("Copy"); textArea.remove();
-            showToast("주소 복사되었어요");
-        }
-
-        // [NEW] Close previous modal
-        function closePreviousModal() {
-            document.getElementById('previousRecordModal').classList.add('hidden');
-        }
+        function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translate(-50%,-10px)'},2000); }
+        function startQrScanner() { isProcessingScan=false; const scannerOverlay = document.getElementById('scannerOverlay'); const qrButton = document.getElementById('qrButton'); const rect = qrButton.getBoundingClientRect(); const centerX = rect.left + rect.width / 2; const centerY = rect.top + rect.height / 2; scannerOverlay.style.setProperty('--origin-x', `${centerX}px`); scannerOverlay.style.setProperty('--origin-y', `${centerY}px`); scannerOverlay.classList.remove('hidden'); scannerOverlay.classList.remove('hide'); scannerOverlay.classList.add('flex'); void scannerOverlay.offsetWidth; requestAnimationFrame(() => scannerOverlay.classList.add('show')); setTimeout(() => { if (html5QrCode) html5QrCode.clear().catch(console.error); html5QrCode = new Html5Qrcode("qr-reader"); const config = { fps: 20, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0, disableFlip: false }; html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess).catch(err => alert("카메라 권한 필요: " + err)); }, 300); }
+        function stopQrScanner() { const scannerOverlay = document.getElementById('scannerOverlay'); const qrButton = document.getElementById('qrButton'); const rect = qrButton.getBoundingClientRect(); const centerX = rect.left + rect.width / 2; const centerY = rect.top + rect.height / 2; scannerOverlay.style.setProperty('--origin-x', `${centerX}px`); scannerOverlay.style.setProperty('--origin-y', `${centerY}px`); scannerOverlay.classList.remove('show'); scannerOverlay.classList.add('hide'); setTimeout(() => { scannerOverlay.classList.add('hidden'); scannerOverlay.classList.remove('flex', 'hide'); scannerOverlay.style.removeProperty('--origin-x'); scannerOverlay.style.removeProperty('--origin-y'); }, 500); if (html5QrCode) html5QrCode.stop().catch(console.error); }
+        function onScanSuccess(d) { if (isProcessingScan) return; isProcessingScan = true; ui.scanFrame.classList.add('scan-success'); setTimeout(() => { scannedAddress = d; stopQrScanner(); ui.scanModalAddress.innerText = scannedAddress; const amount = ui.sutAmountDisplay.innerText.replace(/,/g, ''); const krw = ui.krwInput.value || '0'; if (amount !== '0') { ui.scanAmountDetails.classList.remove('hidden'); ui.scanModalSut.innerText = amount + ' SUT'; ui.scanModalKrw.innerText = krw + '원'; } else { ui.scanAmountDetails.classList.add('hidden'); } document.getElementById('scanResultModal').classList.remove('hidden'); document.getElementById('scanResultModal').classList.add('flex'); isProcessingScan = false; ui.scanFrame.classList.remove('scan-success'); }, 500); }
+        function toggleChart() { const c=document.getElementById('chartContent'); const i=document.getElementById('chartToggleIcon'); c.classList.toggle('hidden'); i.classList.toggle('rotate-180'); if(!c.classList.contains('hidden') && chartInstance){const r=document.getElementById('tvChartContainer').getBoundingClientRect(); chartInstance.applyOptions({width:r.width,height:r.height}); chartInstance.timeScale().fitContent();} }
+        function adjustInputWidth() { const val = ui.krwInput.value || ui.krwInput.placeholder; const span = document.createElement('span'); span.style.font = window.getComputedStyle(ui.krwInput).font; span.style.fontWeight = window.getComputedStyle(ui.krwInput).fontWeight; span.style.fontSize = window.getComputedStyle(ui.krwInput).fontSize; span.style.letterSpacing = window.getComputedStyle(ui.krwInput).letterSpacing; span.style.visibility = 'hidden'; span.style.position = 'absolute'; span.style.whiteSpace = 'pre'; span.innerText = val; document.body.appendChild(span); const width = span.offsetWidth; ui.krwInput.style.width = (width + 2) + 'px'; document.body.removeChild(span); }
+        function saveLastCalculation(sut, krw, address) { localStorage.setItem('lastSut', sut); localStorage.setItem('lastKrw', krw); localStorage.setItem('lastAddress', address); }
+        function checkAndDisplayPreviousRecord() {}
+        function copyPrevAddress() { navigator.clipboard.writeText(document.getElementById('prevModalAddress').innerText).then(()=>showToast('주소 복사됨')); }
+        function closePreviousModal() { document.getElementById('previousRecordModal').classList.add('hidden'); }
+        function goToStore() { window.location.href = 'https://apps.apple.com/app/trust-wallet/id1288339409'; }
+        function closeStoreModal() { document.getElementById('storeRedirectModal').classList.add('hidden'); }
     </script>
 </body>
 </html>
